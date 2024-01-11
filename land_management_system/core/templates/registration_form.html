@@ -1,0 +1,27 @@
+<!-- templates/registration_form.html -->
+
+<form method="post" action="{% url 'aPage' %}">
+    {% csrf_token %}
+    <label for="first_name">First Name:</label>
+    <input type="text" id="first_name" name="first_name" required>
+
+    <label for="last_name">Last Name:</label>
+    <input type="text" id="last_name" name="last_name" required>
+
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required>
+
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" required>
+
+    <label for="mobile_number">Mobile Number:</label>
+    <input type="text" id="mobile_number" name="mobile_number" required>
+
+    <label for="cnic">CNIC:</label>
+    <input type="text" id="cnic" name="cnic" required>
+
+    <button type="submit">Register</button>
+</form>
