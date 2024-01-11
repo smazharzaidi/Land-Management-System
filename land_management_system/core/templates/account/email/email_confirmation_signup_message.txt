@@ -1,0 +1,7 @@
+Hi,
+
+Thank you for registering. Please click the link below to activate your account:
+
+http://yourdomain.com/account-confirm-email/{{ key }}/
+
+Thank you!
