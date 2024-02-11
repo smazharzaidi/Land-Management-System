@@ -1,6 +1,7 @@
-from .views import aPage
+from .views import *
 from django.urls import path
 
 urlpatterns = [
-    path('', aPage, name='aPage'),
+    path('registration/', aPage, name='aPage'),
+    path('login/', login_view, name='login'),
 ]
