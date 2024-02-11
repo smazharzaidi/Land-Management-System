@@ -1,7 +1,7 @@
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  final registrationUri = Uri.parse("http://192.168.1.11:8000/registration/");
+  final registrationUri = Uri.parse("http://192.168.1.3:8000/registration/");
   Future<String> registration(
       String username,
       String email,

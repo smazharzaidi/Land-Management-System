@@ -1,12 +1,14 @@
-from django.shortcuts import render
-from django.http.response import JsonResponse
-from django.contrib.auth import get_user_model
+from django.shortcuts import render, redirect
+from django.http import HttpResponse, JsonResponse
+from django.contrib.auth import *
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
 from allauth.account.models import EmailAddress
 from allauth.account.utils import send_email_confirmation
 from django.db import IntegrityError
+from django.db.models import Q
+from .models import *
 import json
 
 
@@ -95,3 +97,43 @@ def aPage(request):
     else:
         # Render the registration form template on a GET request
         return render(request, "registration_form.html")
+
+
+@csrf_exempt
+def login_view(request):
+    if request.method == "POST":
+        login_id = request.POST.get(
+            "login_id"
+        )  # Use 'login_id' to cover both email and CNIC
+        password = request.POST.get("password")
+
+        user = None
+        if "@" in login_id:  # Assuming it's an email
+            try:
+                user = User.objects.get(email=login_id)
+            except User.DoesNotExist:
+                pass
+        else:  # Assuming it's a CNIC
+            try:
+                user = User.objects.get(cnic=login_id)
+            except User.DoesNotExist:
+                pass
+
+        if user is not None:
+            user = authenticate(request, username=user.username, password=password)
+            if user is not None:
+                login(request, user)
+                # Modify here for JsonResponse
+                return JsonResponse(
+                    {
+                        "message": "Login successful",
+                        "user": {"username": user.username, "email": user.email},
+                    },
+                    status=200,
+                )
+            else:
+                return JsonResponse({"error": "Invalid login or password."}, status=400)
+        else:
+            return JsonResponse({"error": "Invalid login or password."}, status=400)
+    else:
+        return render(request, "login.html")
