@@ -10,6 +10,11 @@ from django.db import IntegrityError
 from django.db.models import Q
 from .models import *
 import json
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 
 @csrf_exempt
@@ -100,37 +105,61 @@ def aPage(request):
 
 
 @csrf_exempt
+@api_view(["POST"])
+def logout_view(request):
+    try:
+        refresh_token = request.data.get("refresh")
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+        return Response({"message": "Logout successful."}, status=200)
+    except Exception as e:
+        return Response({"error": str(e)}, status=400)
+
+
+@csrf_exempt
 def login_view(request):
     if request.method == "POST":
-        login_id = request.POST.get(
-            "login_id"
-        )  # Use 'login_id' to cover both email and CNIC
+        username = request.POST.get("username")
         password = request.POST.get("password")
-
         user = None
-        if "@" in login_id:  # Assuming it's an email
+
+        # Determine if username is an email or CNIC
+        if "@" in username:
             try:
-                user = User.objects.get(email=login_id)
-            except User.DoesNotExist:
+                user = get_user_model().objects.get(email=username)
+            except get_user_model().DoesNotExist:
                 pass
-        else:  # Assuming it's a CNIC
+        else:
             try:
-                user = User.objects.get(cnic=login_id)
-            except User.DoesNotExist:
+                user = get_user_model().objects.get(cnic=username)
+            except get_user_model().DoesNotExist:
                 pass
 
         if user is not None:
-            user = authenticate(request, username=user.username, password=password)
-            if user is not None:
-                login(request, user)
-                # Modify here for JsonResponse
-                return JsonResponse(
-                    {
-                        "message": "Login successful",
-                        "user": {"username": user.username, "email": user.email},
-                    },
-                    status=200,
+            # Authenticate user
+            authentication_result = authenticate(
+                request, username=user.username, password=password
+            )
+            if authentication_result is not None:
+                # Use TokenObtainPairSerializer to validate and create a token
+                serializer = TokenObtainPairSerializer(
+                    data={"username": user.username, "password": password}
                 )
+                # Validate serializer with user's credentials
+                if serializer.is_valid():
+                    # Generate token
+                    token = serializer.validated_data
+                    return JsonResponse(
+                        {
+                            "message": "Login successful",
+                            "access": token["access"],
+                            "refresh": token["refresh"],
+                            "user": {"username": user.username, "email": user.email},
+                        },
+                        status=200,
+                    )
+                else:
+                    return JsonResponse({"error": "Invalid credentials"}, status=400)
             else:
                 return JsonResponse({"error": "Invalid login or password."}, status=400)
         else:
