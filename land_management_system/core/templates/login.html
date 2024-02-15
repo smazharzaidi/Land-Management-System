@@ -2,8 +2,8 @@
 
 <form method="post" action="{% url 'login' %}">
     {% csrf_token %}
-    <label for="login_id">Email/CNIC:</label>
-    <input type="text" id="login_id" name="login_id" required>
+    <label for="username">Email/CNIC:</label>
+    <input type="text" id="username" name="username" required>
 
     <label for="password">Password:</label>
     <input type="password" id="password" name="password" required>

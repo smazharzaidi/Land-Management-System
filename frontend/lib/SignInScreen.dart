@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:frontend/SignInAuth.dart';
 import 'package:frontend/SignUpScreen.dart';
@@ -29,22 +27,20 @@ class _SignInScreenState extends State<SignInScreen> {
 
     if (username.isNotEmpty && password.isNotEmpty) {
       try {
-        final String result = await _authService.login(username, password);
-        final Map<String, dynamic> response = json.decode(result);
-
-        if (response.containsKey('error')) {
-          _showErrorDialog(response['error']);
-        } else if (response.containsKey('message') &&
-            response['message'] == "Login successful") {
+        final bool result = await _authService.login(username, password);
+        if (result) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const DashboardScreen()),
+            MaterialPageRoute(
+                builder: (context) => DashboardScreen(
+                      authService: _authService,
+                    )),
           );
         } else {
-          _showErrorDialog('Unexpected response from server.');
+          _showErrorDialog('Login failed. Please check your credentials.');
         }
       } catch (e) {
-        _showErrorDialog(e.toString());
+        _showErrorDialog('An error occurred: ${e.toString()}');
       } finally {
         setState(() {
           isLoading = false; // End loading
