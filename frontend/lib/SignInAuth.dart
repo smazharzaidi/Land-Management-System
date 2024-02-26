@@ -1,27 +1,29 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:frontend/SignInScreen.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthServiceLogin {
-  final loginUri = Uri.parse("http://192.168.1.5:8000/login/");
+  final loginUri = Uri.parse("http://192.168.1.11:8000/login/");
   final refreshTokenUri =
-      Uri.parse("http://192.168.1.5:8000/api/token/refresh/");
+      Uri.parse("http://192.168.1.11:8000/api/token/refresh/");
   final storage = SecureStorageService();
   Future<String?> getToken() async {
     return await storage.getToken();
   }
 
+  Future<void> saveUsername(String username) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('username', username);
+  }
+
   Future<bool> login(String username, String password) async {
     var response = await http.post(
       loginUri,
-      // For form data, use this format
       body: {"username": username, "password": password},
-      // Comment out or remove the 'Content-Type': 'application/json' header
-      // headers: {"Content-Type": "application/json"},
     );
 
     print('Response status: ${response.statusCode}');
@@ -29,8 +31,14 @@ class AuthServiceLogin {
 
     if (response.statusCode == 200) {
       var data = json.decode(response.body);
-      await storage.saveToken(data[
-          'access']); // Make sure your backend sends a JSON response with an 'access' token
+      await storage.saveToken(data['access']); // Save the access token
+
+      // Extract and save the username
+      String username = data['user']['username'];
+      await saveUsername(username);
+      print("Username: $username");
+
+
       return true;
     }
     return false;
@@ -69,7 +77,7 @@ class AuthServiceLogin {
       // Call the backend's logout endpoint
       await http.post(
         Uri.parse(
-            "http://192.168.1.5:8000/logout/"), // Adjust the URL to your backend's logout endpoint
+            "http://192.168.1.11:8000/logout/"), // Adjust the URL to your backend's logout endpoint
         body: jsonEncode({"refresh": refreshToken}),
         headers: {"Content-Type": "application/json"},
       );

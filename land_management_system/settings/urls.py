@@ -16,7 +16,8 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
+from django.views.generic.base import RedirectView  # Import RedirectView here
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -30,5 +31,8 @@ urlpatterns = [
     path("", include("dj_rest_auth.urls")),
     # path("registration/", include("dj_rest_auth.registration.urls")),
     path("account/", include("allauth.urls")),
-    
+    re_path(
+        r"^accounts/login/$",
+        RedirectView.as_view(pattern_name="login", permanent=False),
+    ),
 ]

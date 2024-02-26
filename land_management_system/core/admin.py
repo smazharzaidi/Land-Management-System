@@ -1,22 +1,40 @@
 from django.contrib import admin
-from .models import User
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from .models import User, Land, LandTransfer, NFT, AuthToken, TaxesFee
 
 
-# Register your models here.
-@admin.register(User)
-class UserAdmin(BaseUserAdmin):
-    fieldsets = (
-        (None, {'fields': ('username', 'password')}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'mobile_number', 'cnic')}),
-        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
-        ('Important dates', {'fields': ('last_login', 'date_joined')}),
+# Optional: Define custom admin classes to customize the admin interface
+class UserAdmin(admin.ModelAdmin):
+    list_display = ("username", "email", "name","wallet_address", "mobile_number", "cnic", "role")
+    search_fields = ("username", "email", "name","wallet_address", "mobile_number", "cnic")
+
+
+class LandAdmin(admin.ModelAdmin):
+    list_display = ("tehsil", "khasra_number", "division", "owner", "land_area")
+    search_fields = ("tehsil", "khasra_number", "owner__username")
+
+
+class LandTransferAdmin(admin.ModelAdmin):
+    list_display = (
+        "land",
+        "transferor_user",
+        "transferee_user",
+        "transfer_type",
+        "status",
+        "scheduled_date",
+        "transfer_date",
     )
-    add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('username', 'email', 'mobile_number', 'cnic', 'password1', 'password2', 'first_name', 'last_name'),
-        }),
+    search_fields = (
+        "land__khasra_number",
+        "transferor_user__username",
+        "transferee_user__username",
+        "status",
     )
-    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'mobile_number', 'cnic')
-    search_fields = ('username', 'first_name', 'last_name', 'email', 'mobile_number', 'cnic')
+
+
+# Register your models here
+admin.site.register(User, UserAdmin)
+admin.site.register(Land, LandAdmin)
+admin.site.register(LandTransfer, LandTransferAdmin)
+admin.site.register(NFT)  # Simple registration without custom admin class
+admin.site.register(AuthToken)
+admin.site.register(TaxesFee)

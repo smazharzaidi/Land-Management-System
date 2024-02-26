@@ -1,13 +1,41 @@
-# serializers.py
-from dj_rest_auth.registration.serializers import RegisterSerializer
 from rest_framework import serializers
+from .models import User, Land, LandTransfer, NFT, TaxesFee
 
-class CustomRegisterSerializer(RegisterSerializer):
-    mobile_number = serializers.CharField(required=True)
-    cnic = serializers.CharField(required=True)
 
-    def get_cleaned_data(self):
-        data = super().get_cleaned_data()
-        data['mobile_number'] = self.validated_data.get('mobile_number', '')
-        data['cnic'] = self.validated_data.get('cnic', '')
-        return data
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            "id",
+            "username",
+            "email",
+            "full_name",
+            "wallet_address",
+            "mobile_number",
+            "cnic",
+            "role",
+        )
+
+
+class LandSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Land
+        fields = "__all__"
+
+
+class LandTransferSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LandTransfer
+        fields = "__all__"
+
+
+class NFTSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NFT
+        fields = "__all__"
+
+
+class TaxesFeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TaxesFee
+        fields = "__all__"
