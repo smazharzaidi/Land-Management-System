@@ -14,8 +14,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController firstNameController = TextEditingController();
-  final TextEditingController lastNameController = TextEditingController();
+  final TextEditingController nameController = TextEditingController();
   final TextEditingController mobileNumberController = TextEditingController();
   final TextEditingController cnicController = TextEditingController();
   bool isLoading = false; // Loading state variable
@@ -62,18 +61,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       const SizedBox(height: 10),
                       TextField(
-                        controller: firstNameController,
+                        controller: nameController,
                         decoration: const InputDecoration(
-                          labelText: 'First Name',
-                          hintText: 'Enter your first name',
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: lastNameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Last Name',
-                          hintText: 'Enter your last name',
+                          labelText: 'Full Name',
+                          hintText: 'Enter your full name',
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -144,8 +135,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         usernameController.text,
         emailController.text,
         passwordController.text,
-        firstNameController.text,
-        lastNameController.text,
+        nameController.text,
         mobileNumberController.text,
         cnicController.text,
       );

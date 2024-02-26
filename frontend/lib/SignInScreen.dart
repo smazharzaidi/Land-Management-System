@@ -36,6 +36,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       authService: _authService,
                     )),
           );
+          
         } else {
           _showErrorDialog('Login failed. Please check your credentials.');
         }

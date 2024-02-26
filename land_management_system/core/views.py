@@ -1,31 +1,45 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
-from django.contrib.auth import *
+from django.contrib.auth import authenticate, get_user_model
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
 from allauth.account.models import EmailAddress
 from allauth.account.utils import send_email_confirmation
 from django.db import IntegrityError
-from django.db.models import Q
 from .models import *
 import json
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status
+
+
+class LinkWalletView(APIView):
+    def post(self, request, *args, **kwargs):
+        username = request.data.get("username")
+        wallet_address = request.data.get("wallet_address")
+        try:
+            user = get_user_model().objects.get(username=username)
+            user.wallet_address = wallet_address
+            user.save()
+            return Response({"success": True, "message": "Wallet linked successfully."})
+        except get_user_model().DoesNotExist:
+            return Response({"success": False, "message": "User not found."})
 
 
 @csrf_exempt
 def aPage(request):
     if request.method == "POST":
-        # Get data from POST request
+        # Extract data from POST request
         username = request.POST.get("username")
         email = request.POST.get("email")
         password = request.POST.get("password")
-        first_name = request.POST.get("first_name")
-        last_name = request.POST.get("last_name")
+        name = request.POST.get("name")
         mobile_number = request.POST.get("mobile_number")
         cnic = request.POST.get("cnic")
 
@@ -35,8 +49,7 @@ def aPage(request):
         except ValidationError as e:
             return JsonResponse({"errors": list(e.messages)}, status=400)
 
-        # Create user if data is valid
-        User = get_user_model()
+        # Check for existing mobile_number and cnic
         if User.objects.filter(mobile_number=mobile_number).exists():
             return JsonResponse(
                 {
@@ -49,18 +62,20 @@ def aPage(request):
                 {"errors": "This CNIC is already in use. Please use a different CNIC."},
                 status=400,
             )
+
         try:
+            # Create user with the default role set to 'user'
             user = User.objects.create_user(
                 username=username,
                 email=email,
                 password=password,
-                first_name=first_name,
-                last_name=last_name,
+                name=name,
+                mobile_number=mobile_number,
+                cnic=cnic,
+                role="user",  # Set the role to 'user' by default
             )
-            user.mobile_number = mobile_number
-            user.cnic = cnic
-            user.save()
 
+            # Attempt to send a confirmation email
             try:
                 EmailAddress.objects.create(
                     user=user, email=user.email, primary=True, verified=False
@@ -70,20 +85,21 @@ def aPage(request):
                     "data": {
                         "username": user.username,
                         "email": user.email,
-                        "first_name": user.first_name,
-                        "last_name": user.last_name,
+                        "name": user.name,
                         "mobile_number": user.mobile_number,
                         "cnic": user.cnic,
+                        "role": user.role,
                     }
                 }
                 return JsonResponse(response_data, status=201)
             except Exception:
-                user.delete()  # Rollback user creation in case of failure
+                user.delete()  # Rollback user creation in case of failure to send email
                 return JsonResponse(
                     {"errors": "Failed to send confirmation email."}, status=500
                 )
 
         except IntegrityError as e:
+            # Handle unique constraint violations for email and username
             if "email" in str(e):
                 error_message = (
                     "This email is already in use. Please use a different email."
@@ -97,6 +113,7 @@ def aPage(request):
             return JsonResponse({"errors": error_message}, status=400)
 
         except Exception as e:
+            # Handle other exceptions
             return JsonResponse({"errors": str(e)}, status=400)
 
     else:

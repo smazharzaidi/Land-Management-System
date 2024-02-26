@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # new
     "django.contrib.sites",
+    "django.contrib.gis",
     # 3rd party app
     "rest_framework",
     "rest_framework.authtoken",
@@ -108,8 +109,12 @@ WSGI_APPLICATION = "settings.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / config("DATABASENAME"),
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "NAME": "land_management",
+        "USER": "postgres",
+        "PASSWORD": "mazhar",
+        "HOST": "localhost",
+        "PORT": "5432",  # Default is 5432
     }
 }
 
@@ -167,3 +172,5 @@ ACCOUNT_EMAIL_REQUIRED = True
 DEFAULT_FROM_EMAIL = "mazhardraws@gmail.com"
 DOMAIN = "www.landmanager.com"  # Replace with your domain
 SITE_NAME = "LandManagement"
+GDAL_LIBRARY_PATH = r"C:\OSGeo4W\bin\gdal308.dll"
+GEOS_LIBRARY_PATH = r"C:\OSGeo4W\bin\geos_c.dll"
