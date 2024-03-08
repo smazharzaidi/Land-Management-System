@@ -1,15 +1,16 @@
 // ignore_for_file: file_names
 
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:frontend/SignInAuth.dart';
 import 'package:frontend/SignInScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
-import 'package:walletconnect_dart/walletconnect_dart.dart';
 import 'NFTSelection.dart';
+import 'package:web3modal_flutter/web3modal_flutter.dart';
 
 class DashboardScreen extends StatefulWidget {
   final AuthServiceLogin authService;
@@ -18,110 +19,115 @@ class DashboardScreen extends StatefulWidget {
       : super(key: key);
 
   @override
-  _DashboardScreenState createState() => _DashboardScreenState();
+  State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  // @override
-  // void initState() {
-  //   super.initState();
-  // Initialize the WalletConnect connector here or ensure it's accessible
-  WalletConnect connector = WalletConnect(
-    bridge: 'https://bridge.walletconnect.org',
-    clientMeta: const PeerMeta(
-        name: 'CryptoLand',
-        description: 'App Description',
-        url: 'https://walletconnect.org',
-        icons: [
-          'https://gblobscdn.gitbook.com/spaces%2F-LJJeCjcLrr53DcT1Ml7%2Favatar.png?alt=media'
-        ]),
-  );
-  // }
-  var _uri, _session;
-  loginUsingMetamask(BuildContext context) async {
-    if (!connector.connected) {
-      try {
-        var session = await connector.createSession(onDisplayUri: (uri) async {
-          _uri = uri;
-          if (await canLaunchUrlString(uri)) {
-            await launchUrlString(uri, mode: LaunchMode.externalApplication);
-          } else {
-            throw 'Could not launch $uri';
-          }
-        });
-        // print(session.accounts[0]);
-        // print(session.chainId);
-        setState(() {
-          _session = session;
-        });
-        print("Connected: ${session.accounts[0]}");
+  late W3MService _w3mService;
+  @override
+  void initState() {
+    super.initState();
+    initializeState();
+  }
 
-        // if (session != null) {
-        //   setState(() {
-        //     _walletAddress = session.accounts[0];
-        //     print("Session created: $session");
-        //     print("Wallet address: $_walletAddress");
-        //   });
+  static const _chainId = "80001";
+  // final _polygonChain = W3MChainInfo(
+  //   chainName: 'Mumbai',
+  //   chainId: _chainId,
+  //   namespace: 'eip155:$_chainId',
+  //   tokenName: 'MATIC',
+  //   rpcUrl: '<https://rpc.ankr.com/polygon_mumbai>',
+  //   blockExplorer: W3MBlockExplorer(
+  //     name: 'Polygonscan',
+  //     url:
+  //         '<https://mumbai.polygonscan.com/>', // Block explorer URL for the Mumbai testnet
+  //   ),
+  // );
+  final Set<String> _includedWalletIds = {
+    'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96', // MetaMask
+  };
+  void initializeState() async {
+    // W3MChainPresets.chains.putIfAbsent(_chainId, () => _polygonChain);
+    _w3mService = W3MService(
+        projectId: '3be38bea99b2f7d2ab77bda7940eb55c',
+        metadata: const PairingMetadata(
+          name: 'Web3Modal Flutter Example',
+          description: 'Web3Modal Flutter Example',
+          url: 'https://www.walletconnect.com/',
+          icons: ['https://walletconnect.com/walletconnect-logo.png'],
+          redirect: Redirect(
+            native: 'flutterdapp://', // your own custom scheme
+            universal: 'https://www.walletconnect.com',
+          ),
+        ),
+        includedWalletIds: _includedWalletIds);
+    await _w3mService.init();
+  }
 
-        //   // Optionally, link the wallet address to the user account
-        //   // await linkWalletToUser(_walletAddress!);
+  void requestWalletAddress() async {
+    // Check if session or topic is null or empty
+    if (_w3mService.session == null || _w3mService.session!.topic!.isEmpty ??
+        true) {
+      print("Session is not initialized or topic is empty.");
+      // Handle this case appropriately (e.g., initialization, error message)
+      return;
+    }
 
-        //   // // Show a dialog upon successful connection
-        //   // showDialog(
-        //   //   context: context,
-        //   //   builder: (context) => AlertDialog(
-        //   //     title: const Text('Connection Successful'),
-        //   //     content: const Icon(Icons.check_circle_outline,
-        //   //         color: Colors.green, size: 60),
-        //   //     actions: [
-        //   //       TextButton(
-        //   //         onPressed: () => Navigator.of(context).pop(),
-        //   //         child: const Text('OK'),
-        //   //       ),
-        //   //     ],
-        //   //   ),
-        //   // );
-        // }
-      } on Exception catch (e) {
-        print("Error connecting to MetaMask: $e");
-        _showErrorDialog(context, "Error connecting to MetaMask: $e");
-      } catch (e) {
-        // Handle any other types of errors
-        print("An unexpected error occurred: $e");
-        _showErrorDialog(context, "An unexpected error occurred: $e");
-      }
+    // Since we're here, session and topic are not null. However, we need to handle the possibility
+    // that session!.topic might still be null. Let's ensure it's non-null before proceeding.
+    final String? topic = _w3mService.session!.topic;
+    if (topic == null) {
+      print("Topic is null.");
+      // Handle this case appropriately
+      return;
+    }
+
+    // Proceed with non-null topic
+    await _w3mService.launchConnectedWallet();
+    var accounts = await _w3mService.web3App?.request(
+      topic: topic, // Safe to use topic here as it's confirmed to be non-null
+      chainId: 'eip155:$_chainId',
+      request: SessionRequestParams(
+        method: 'eth_requestAccounts',
+        params: [],
+      ),
+    );
+
+    if (accounts != null && accounts.isNotEmpty) {
+      final String walletAddress = accounts.first;
+      _linkWalletToUser(walletAddress);
+    } else {
+      print("Failed to retrieve wallet address.");
     }
   }
 
-  // Future<void> linkWalletToUser(String walletAddress) async {
-  //   String? username = await getUsername();
-  //   if (username == null) {
-  //     print("Username is null. Cannot proceed with linking wallet.");
-  //     return;
-  //   }
+  void _linkWalletToUser(String walletAddress) async {
+    final String? username = await AuthServiceLogin()
+        .getUsername(); // Assuming this method returns the currently logged-in username.
+    if (username == null) {
+      print('Error: No username found. User is not logged in.');
+      return;
+    }
 
-  //   var response = await http.post(
-  //     Uri.parse('http://192.168.1.11:8000/link_wallet/'),
-  //     headers: <String, String>{
-  //       'Content-Type': 'application/json; charset=UTF-8',
-  //     },
-  //     body: jsonEncode(<String, String>{
-  //       'username': username,
-  //       'wallet_address': walletAddress,
-  //     }),
-  //   );
+    final response = await http.post(
+      Uri.parse(
+          'http://192.168.1.12:8000/link_wallet/'), // Adjust the URL to your backend endpoint for linking the wallet.
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'username': username,
+        'wallet_address': walletAddress,
+      }),
+    );
 
-  //   if (response.statusCode == 200) {
-  //     print("Wallet linked successfully.");
-  //   } else {
-  //     print("Failed to link wallet. Status code: ${response.statusCode}");
-  //   }
-  // }
+    if (response.statusCode == 200) {
+      print('Wallet linked successfully');
+    } else {
+      print('Failed to link wallet. Error: ${response.body}');
+    }
+  }
 
-  // Future<String?> getUsername() async {
-  //   final SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   return prefs.getString('username');
-  // }
   void _showErrorDialog(BuildContext context, String message) {
     showDialog(
       context: context,
@@ -163,20 +169,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.account_balance_wallet,
-                      color: Colors.green),
-                  title: const Text('Connect to MetaMask'),
-                  onTap: () => loginUsingMetamask(context),
-                ),
-                ListTile(
                   leading: const Icon(Icons.exit_to_app, color: Colors.green),
                   title: const Text('Logout'),
                   onTap: () {
                     _handleLogout(); // Simply call the logout method
                   },
                 ),
-
-                // Add more options as needed
+                W3MNetworkSelectButton(service: _w3mService),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                  ),
+                  onPressed: requestWalletAddress,
+                  child: const Text(
+                    'Link Permenantly',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
               ],
             ),
           ),
@@ -196,15 +205,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _handleLogout() async {
     if (!mounted) return;
 
-    try {
-      setState(() {
-        _isLoggingOut = true; // Start showing the loading indicator
-      });
+    // Close the dialog immediately to proceed with the logout
+    Navigator.of(context).pop(); // Close the logout dialog
 
-      // Simulating a logout operation with a delay
-      await Future.delayed(
-          Duration(seconds: 2)); // Placeholder for your actual logout logic
-      // If the authService.logout() method throws an error, it will be caught by the catch block
+    setState(() {
+      _isLoggingOut = true; // Indicate loading
+    });
+
+    try {
+      // Replace Future.delayed with actual logout operation
+      await AuthServiceLogin().logout();
 
       if (!mounted) return;
 
@@ -213,13 +223,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           .pushReplacement(MaterialPageRoute(builder: (_) => SignInScreen()));
     } catch (error) {
       print("Logout failed: $error");
-      // Handle logout failure (e.g., show a toast notification)
       if (!mounted) return;
 
       setState(() {
-        _isLoggingOut =
-            false; // Hide the loading indicator and possibly show an error message
+        _isLoggingOut = false; // Stop indicating loading
       });
+      // Optionally, show an error dialog or toast here
     }
   }
 

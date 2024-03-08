@@ -5,11 +5,13 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:web3modal_flutter/web3modal_flutter.dart';
 
 class AuthServiceLogin {
-  final loginUri = Uri.parse("http://192.168.1.11:8000/login/");
+  late W3MService _w3mService;
+  final loginUri = Uri.parse("http://192.168.1.12:8000/login/");
   final refreshTokenUri =
-      Uri.parse("http://192.168.1.11:8000/api/token/refresh/");
+      Uri.parse("http://192.168.1.12:8000/api/token/refresh/");
   final storage = SecureStorageService();
   Future<String?> getToken() async {
     return await storage.getToken();
@@ -18,6 +20,13 @@ class AuthServiceLogin {
   Future<void> saveUsername(String username) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('username', username);
+  }
+
+  Future<String?> getUsername() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    // Read the username using the same key you used to save it
+    String? username = prefs.getString('username');
+    return username;
   }
 
   Future<bool> login(String username, String password) async {
@@ -31,17 +40,28 @@ class AuthServiceLogin {
 
     if (response.statusCode == 200) {
       var data = json.decode(response.body);
-      await storage.saveToken(data['access']); // Save the access token
+      if (data['access'] != null) {
+        await storage.saveToken(data['access']); // Save the access token
 
-      // Extract and save the username
-      String username = data['user']['username'];
-      await saveUsername(username);
-      print("Username: $username");
+        // Optionally save wallet address if it exists
+        String? walletAddress = data['user']['wallet_address'];
+        if (walletAddress != null && walletAddress.isNotEmpty) {
+          await storage.saveWalletAddress(walletAddress);
+        }
 
+        // Save username or other necessary details
 
-      return true;
+        return true; // Indicate successful login
+      } else {
+        // Handle scenario when 'access' token is not in the response
+        print("Login failed: Access token missing in the response");
+        return false;
+      }
+    } else {
+      // Handle HTTP response other than 200 OK
+      print("Login failed: HTTP status code ${response.statusCode}");
+      return false;
     }
-    return false;
   }
 
   Future<bool> refreshToken() async {
@@ -72,19 +92,30 @@ class AuthServiceLogin {
 
   Future<void> logout() async {
     String? refreshToken = await storage
-        .getToken(); // Assuming this gets the refresh token. You might need to adjust this to get the actual refresh token.
+        .getToken(); // This should get the refresh token, not the access token
     if (refreshToken != null) {
-      // Call the backend's logout endpoint
-      await http.post(
+      var response = await http.post(
         Uri.parse(
-            "http://192.168.1.11:8000/logout/"), // Adjust the URL to your backend's logout endpoint
+            "http://192.168.1.12:8000/logout/"), // Adjust the URL to your backend's logout endpoint
         body: jsonEncode({"refresh": refreshToken}),
         headers: {"Content-Type": "application/json"},
       );
+
+      if (response.statusCode == 200) {
+        // Logout was successful on the backend
+        if (_w3mService.isConnected) {
+          await _w3mService.disconnect();
+        }
+        // Delete user's local wallet address and token as well
+        await storage.deleteWalletAddress();
+        await storage.deleteToken();
+      } else {
+        // Handle errors here
+      }
     }
-    await storage
-        .deleteToken(); // Continue to delete the token from secure storage
   }
+
+  
 
   Timer? _inactivityTimer;
 
@@ -108,6 +139,10 @@ class AuthServiceLogin {
 }
 
 class SecureStorageService {
+  Future<void> deleteWalletAddress() async {
+    await _storage.delete(key: 'walletAddress');
+  }
+
   final _storage = FlutterSecureStorage();
 
   Future<void> saveToken(String token) async {
@@ -142,5 +177,13 @@ class SecureStorageService {
 
   Future<void> deleteToken() async {
     await _storage.delete(key: 'authToken');
+  }
+
+  Future<void> saveWalletAddress(String walletAddress) async {
+    await _storage.write(key: 'walletAddress', value: walletAddress);
+  }
+
+  Future<String?> getWalletAddress() async {
+    return await _storage.read(key: 'walletAddress');
   }
 }
