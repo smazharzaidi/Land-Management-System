@@ -171,10 +171,15 @@ def login_view(request):
                             "message": "Login successful",
                             "access": token["access"],
                             "refresh": token["refresh"],
-                            "user": {"username": user.username, "email": user.email},
+                            "user": {
+                                "username": user.username,
+                                "email": user.email,
+                                "wallet_address": user.wallet_address,  # Include wallet address in response
+                            },
                         },
                         status=200,
                     )
+
                 else:
                     return JsonResponse({"error": "Invalid credentials"}, status=400)
             else:
