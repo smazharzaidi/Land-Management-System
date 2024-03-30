@@ -1,8 +1,11 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'DashboardScreen.dart'; // Adjust the import paths as necessary
-import 'SignInAuth.dart'; // Adjust the import paths as necessary
-import 'SignInScreen.dart'; // Adjust the import paths as necessary
+import 'package:provider/provider.dart';
+import 'UI/DashboardScreen.dart'; // Adjust the import paths as necessary
+import 'Functionality/SignInAuth.dart'; // Adjust the import paths as necessary
+import 'Functionality/NFTListProvider.dart'; // Adjust the import paths as necessary
+import 'UI/SignInScreen.dart'; // Adjust the import paths as necessary
 
 void main() {
   runApp(MyApp());
@@ -34,27 +37,33 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      debugShowCheckedModeBanner: false,
-      title: 'Land Management Dashboard',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: FutureBuilder<bool>(
-        future: _authService.isTokenValidAndNotExpired(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            if (snapshot.data == true) {
-              return DashboardScreen(
-                authService: _authService,
-              );
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => NFTListProvider()),
+        // Add other providers here as needed
+      ],
+      child: MaterialApp(
+        navigatorKey: navigatorKey,
+        debugShowCheckedModeBanner: false,
+        title: 'Land Management Dashboard',
+        theme: ThemeData(
+          primarySwatch: Colors.green,
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+        ),
+        home: FutureBuilder<bool>(
+          future: _authService.isTokenValidAndNotExpired(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              if (snapshot.data == true) {
+                return DashboardScreen(
+                  authService: _authService,
+                );
+              }
+              return SignInScreen();
             }
-            return SignInScreen();
-          }
-          return Scaffold(body: Center(child: CircularProgressIndicator()));
-        },
+            return Scaffold(body: Center(child: CircularProgressIndicator()));
+          },
+        ),
       ),
     );
   }

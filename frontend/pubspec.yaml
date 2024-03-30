@@ -7,10 +7,12 @@ environment:
   sdk: '>=3.2.2 <4.0.0'
 
 dependencies:
+  flip_card: ^0.7.0
   flutter:
     sdk: flutter
   flutter_secure_storage: ^9.0.0
   http: ^1.2.0
+  provider: ^6.1.2
   shared_preferences: ^2.2.2
   url_launcher: ^6.2.5
   web3modal_flutter: ^3.1.1

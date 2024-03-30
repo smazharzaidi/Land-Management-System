@@ -1,3 +1,4 @@
+import datetime
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth import authenticate, get_user_model
@@ -6,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
 from allauth.account.models import EmailAddress
 from allauth.account.utils import send_email_confirmation
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from .models import *
 import json
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -17,18 +18,136 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from flask import Flask, request
+from dotenv import load_dotenv
+from moralis import evm_api
+import os
+from django.contrib.auth.decorators import login_required
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+
+# Load environment variables
+load_dotenv()
+api_key = os.getenv("MORALIS_API_KEY")
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_wallet_address(request):
+    user = request.user
+    print(f"User {user.username} is requesting wallet address.")
+    wallet_address = getattr(user, "wallet_address", None)
+    if wallet_address:
+        return JsonResponse({"wallet_address": wallet_address})
+    else:
+        return JsonResponse({"error": "Wallet address not found."}, status=404)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])  # Ensure only authenticated users can access
+def get_cnic_from_email(request, email):
+    try:
+        user = User.objects.get(email=email)
+        return Response(
+            {"cnic": user.cnic}
+        )  # Assuming CNIC is stored in a related profile model
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def create_land_transfer(request):
+    data = json.loads(request.body.decode("utf-8"))
+    khasra_number = data.get("khasraNumber")
+    transferee_cnic = data.get("transfereeCNIC")
+    transfer_type = data.get("transferType")
+
+    try:
+        land = Land.objects.get(khasra_number=khasra_number)
+        transferor_user = request.user
+        transferee_user = User.objects.get(cnic=transferee_cnic)
+
+        land_transfer = LandTransfer.objects.create(
+            land=land,
+            transferor_user=transferor_user,
+            transferee_user=transferee_user,
+            transfer_type=transfer_type,
+            status="pending",
+        )
+        return JsonResponse(
+            {"success": True, "message": "Land transfer initiated successfully."}
+        )
+
+    except Land.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Land not found."}, status=404)
+    except User.DoesNotExist:
+        return JsonResponse(
+            {"success": False, "error": "Transferee user not found."}, status=404
+        )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])  # Assuming you want to protect this endpoint
+def verify_cnic(request):
+    data = request.data
+    cnic = data.get("cnic")
+
+    if not cnic:
+        return JsonResponse({"error": "CNIC is required"}, status=400)
+
+    try:
+        user = User.objects.get(cnic=cnic)
+        # If you need to perform additional checks or return specific data, adjust here.
+        return JsonResponse({"message": "CNIC found", "user_id": user.id}, status=200)
+    except User.DoesNotExist:
+        return JsonResponse({"error": "CNIC not found"}, status=404)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_user_nfts(request):
+    try:
+        wallet_address = request.user.wallet_address
+        if not wallet_address:
+            return Response(
+                {"error": "Wallet address not found for the user"}, status=404
+            )
+
+        chain = "sepolia"  # Use Mumbai testnet
+        # Assuming your evm_api call is correct and returns a data structure compatible with JSON serialization
+        result = evm_api.nft.get_wallet_nfts(
+            api_key=api_key,
+            params={
+                "address": wallet_address,
+                "chain": chain,
+                "format": "decimal",
+                "limit": 100,
+                "token_addresses": [],
+                "normalizeMetadata": True,
+            },
+        )
+        # Directly return the result as a Response object
+        # Ensure the result is a dict or similar structure that can be serialized to JSON
+        return Response(result)  # This automatically handles serialization
+
+    except User.DoesNotExist:
+        return Response({"error": "User not found."}, status=404)
 
 
 class LinkWalletView(APIView):
     def post(self, request, *args, **kwargs):
-        username = request.data.get("username")
+        email = request.data.get("username")  # Use email instead of username
         wallet_address = request.data.get("wallet_address")
+        print(f"Attempting to link wallet: {wallet_address} to email: {email}")
         try:
-            user = get_user_model().objects.get(username=username)
+            user = get_user_model().objects.get(email=email)  # Lookup user by email
             user.wallet_address = wallet_address
             user.save()
+            print(f"Successfully linked {wallet_address} to {email}")  # Debug print
             return Response({"success": True, "message": "Wallet linked successfully."})
         except get_user_model().DoesNotExist:
+            print("User not found with the provided email.")
             return Response({"success": False, "message": "User not found."})
 
 

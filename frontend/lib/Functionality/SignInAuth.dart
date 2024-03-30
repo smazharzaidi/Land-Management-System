@@ -1,13 +1,17 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:frontend/SignInScreen.dart';
+import 'package:frontend/UI/SignInScreen.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web3modal_flutter/web3modal_flutter.dart';
+import 'LandTransferData.dart';
 
 class AuthServiceLogin {
+  final String baseURL = "http://192.168.1.12:8000/";
+  LandTransferData? landTransferData;
+  static LandTransferData? currentLandTransferData;
   late W3MService _w3mService;
   final loginUri = Uri.parse("http://192.168.1.12:8000/login/");
   final refreshTokenUri =
@@ -42,6 +46,26 @@ class AuthServiceLogin {
       var data = json.decode(response.body);
       if (data['access'] != null) {
         await storage.saveToken(data['access']); // Save the access token
+        await saveUsername(username);
+
+        String cnic = ''; // Variable to hold CNIC
+        if (username.contains('@')) {
+          // If signed in with email, fetch CNIC from backend
+          cnic = await fetchCNICFromEmail(username);
+        } else {
+          // If signed in with CNIC, use it directly
+          cnic = username;
+        }
+        landTransferData = LandTransferData(
+          transferorCNIC: cnic,
+          transfereeCNIC: '',
+          transferType: '',
+          landTehsil: '',
+          landKhasra: '',
+          landDivision: '',
+        );
+        print("Stored CNIC: ${landTransferData?.transferorCNIC}");
+        currentLandTransferData = landTransferData;
 
         // Optionally save wallet address if it exists
         String? walletAddress = data['user']['wallet_address'];
@@ -61,6 +85,29 @@ class AuthServiceLogin {
       // Handle HTTP response other than 200 OK
       print("Login failed: HTTP status code ${response.statusCode}");
       return false;
+    }
+  }
+
+  Future<String> fetchCNICFromEmail(String email) async {
+    final url = Uri.parse('${this.baseURL}get_cnic_by_email/$email/');
+
+    try {
+      final response = await http.get(url, headers: {
+        // Assuming you have a method to get the token, include it for authentication
+        "Authorization": "Bearer ${await this.getToken()}",
+      });
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['cnic']; // Return the CNIC
+      } else {
+        // Handle non-200 responses or add error logging
+        throw Exception('Failed to load CNIC');
+      }
+    } catch (e) {
+      // Handle exceptions or add error logging
+      print(e.toString());
+      throw Exception('Error fetching CNIC from email');
     }
   }
 
@@ -114,8 +161,6 @@ class AuthServiceLogin {
       }
     }
   }
-
-  
 
   Timer? _inactivityTimer;
 

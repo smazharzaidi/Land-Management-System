@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 
 class FingerPrinting extends StatelessWidget {
-  const FingerPrinting({Key? key}) : super(key: key);
+  const FingerPrinting({Key? key, required nftData}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

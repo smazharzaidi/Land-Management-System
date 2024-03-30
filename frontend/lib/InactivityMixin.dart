@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:frontend/SignInAuth.dart';
-import 'package:frontend/SignInScreen.dart';
+import 'package:frontend/Functionality/SignInAuth.dart';
+import 'package:frontend/UI/SignInScreen.dart';
 
 mixin InactivityMixin<T extends StatefulWidget> on State<T> {
   Timer? _inactivityTimer;

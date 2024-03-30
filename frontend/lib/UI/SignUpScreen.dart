@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../Functionality/CNICInputFormatter.dart';
 import 'SignInScreen.dart'; // Make sure this import is correct based on your project structure
-import 'SignUpAuth.dart'; // Replace with the correct import path for your AuthService
+import '../Functionality/SignUpAuth.dart'; // Replace with the correct import path for your AuthService
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
@@ -82,6 +83,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           labelText: 'CNIC',
                           hintText: 'Enter your CNIC',
                         ),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [CNICInputFormatter()],
                       ),
                       const SizedBox(height: 10),
                       TextField(
