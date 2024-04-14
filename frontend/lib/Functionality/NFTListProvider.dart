@@ -33,7 +33,6 @@ class NFTListProvider with ChangeNotifier {
         if (nft['normalized_metadata']?['attributes'] != null) {
           var attributes =
               nft['normalized_metadata']['attributes'] as List<dynamic>;
-          // Debug print
           print("Checking NFT: ${nft['name']}, Attributes: $attributes");
           bool hasLandTrait =
               attributes.any((attr) => attr['trait_type'] == "Land");

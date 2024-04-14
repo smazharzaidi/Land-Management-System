@@ -52,7 +52,7 @@ class LandTransfer(models.Model):
             ("disapproved", "Disapproved"),
         ),
     )
-    scheduled_date = models.DateField()
+    scheduled_datetime = models.DateTimeField(null=True, blank=True)
     transfer_date = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

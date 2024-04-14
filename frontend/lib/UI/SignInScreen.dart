@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:frontend/Functionality/SignInAuth.dart';
 import '../Functionality/CNICInputFormatter.dart';
 import 'package:frontend/UI/SignUpScreen.dart';
+import 'package:flutter/services.dart';
 import 'DashboardScreen.dart'; // Import the DashboardScreen
 
 class SignInScreen extends StatefulWidget {
@@ -19,40 +21,60 @@ class _SignInScreenState extends State<SignInScreen> {
   final AuthServiceLogin _authService = AuthServiceLogin();
 
   void _handleLogin() async {
-    setState(() {
-      isLoading = true; // Start loading
-    });
+    setState(() => isLoading = true);
 
     String username = signInController.text.trim();
     String password = passwordController.text.trim();
 
     if (username.isNotEmpty && password.isNotEmpty) {
       try {
-        final bool result = await _authService.login(username, password);
-        if (result) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (context) => DashboardScreen(
-                      authService: _authService,
-                    )),
-          );
+        String result = await _authService.login(username, password);
+        if (result == "success") {
+          Navigator.of(context).pushReplacement(MaterialPageRoute(
+              builder: (context) =>
+                  DashboardScreen(authService: _authService)));
+        } else if (result == "Email not verified. Please verify your email.") {
+          // Show the dialog for resending the verification email
+          _showUnverifiedEmailDialog(username);
         } else {
-          _showErrorDialog('Login failed. Please check your credentials.');
+          _showErrorDialog(result);
         }
       } catch (e) {
         _showErrorDialog('An error occurred: ${e.toString()}');
       } finally {
-        setState(() {
-          isLoading = false; // End loading
-        });
+        setState(() => isLoading = false);
       }
     } else {
       _showErrorDialog('Please enter both email/CNIC and password.');
-      setState(() {
-        isLoading = false; // End loading if input validation fails
-      });
+      setState(() => isLoading = false);
     }
+  }
+
+  void _showUnverifiedEmailDialog(String email) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Email Not Verified'),
+        content: Text(
+            'Please verify your email to log in. Would you like to resend the verification email?'),
+        actions: <Widget>[
+          TextButton(
+            child: Text('Resend'),
+            onPressed: () async {
+              Navigator.of(ctx).pop(); // Close the dialog
+              String message =
+                  await _authService.resendConfirmationEmail(email);
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(message)));
+            },
+          ),
+          TextButton(
+            child: Text('Cancel'),
+            onPressed: () => Navigator.of(ctx).pop(),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showErrorDialog(String message) {
@@ -76,99 +98,172 @@ class _SignInScreenState extends State<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          CustomScrollView(
-            slivers: <Widget>[
-              SliverAppBar(
-                expandedHeight: 150.0,
-                pinned: true,
-                flexibleSpace: FlexibleSpaceBar(
-                  title: const Text('Sign In',
-                      style: TextStyle(color: Colors.white)),
-                  background: Image.network(
-                    'https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Field_in_K%C3%A4rk%C3%B6l%C3%A4.jpg/275px-Field_in_K%C3%A4rk%C3%B6l%C3%A4.jpg',
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              SliverFillRemaining(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: <Widget>[
-                      TextField(
-                        controller: signInController,
-                        decoration: InputDecoration(
-                          labelText: isEmail ? 'Email' : 'CNIC',
-                          hintText:
-                              isEmail ? 'Enter your email' : 'Enter your CNIC',
-                        ),
-                        keyboardType: isEmail
-                            ? TextInputType.emailAddress
-                            : TextInputType.number,
-                        inputFormatters: isEmail ? [] : [CNICInputFormatter()],
-                      ),
-                      const SizedBox(height: 10),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            isEmail = !isEmail;
-                          });
-                        },
-                        child: Text(
-                          isEmail ? 'Switch to CNIC' : 'Switch to Email',
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: passwordController,
-                        decoration: const InputDecoration(
-                          labelText: 'Password',
-                          hintText: 'Enter your password',
-                        ),
-                        obscureText: true,
-                      ),
-                      const Spacer(),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                        ),
-                        onPressed:
-                            _handleLogin, // Updated to use _handleLogin function
-                        child: const Text('Sign In',
-                            style: TextStyle(color: Colors.white)),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => SignUpScreen()),
-                        ),
-                        child: const Text('Don\'t have an account? Sign Up'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (isLoading) // Check if loading
+      backgroundColor: Colors.grey[200],
+      body: SafeArea(
+        child: Stack(
+          children: [
             Positioned(
-              child: Container(
-                color:
-                    Colors.black.withOpacity(0.5), // Semi-transparent overlay
-                child: Center(
-                  child: CircularProgressIndicator(), // Loading indicator
+              top: 20,
+              left: 20,
+              right: 20,
+              child: Text(
+                'Sign In',
+                style: GoogleFonts.lato(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    SizedBox(
+                        height:
+                            0), // Adjust this value to position the form properly
+                    buildTextField(
+                      controller: signInController,
+                      label: isEmail ? 'Email' : 'CNIC',
+                      keyboardType: isEmail
+                          ? TextInputType.emailAddress
+                          : TextInputType.number,
+                      inputFormatter: isEmail ? null : CNICInputFormatter(),
+                    ),
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.green),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          isEmail = !isEmail;
+                        });
+                      },
+                      child: Text(
+                        isEmail ? 'Switch to CNIC' : 'Switch to Email',
+                        style: GoogleFonts.lato(
+                          color: Colors.green,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    buildTextField(
+                      controller: passwordController,
+                      label: 'Password',
+                      initiallyObscure: true,
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                      ),
+                      onPressed: _handleLogin,
+                      child: isLoading
+                          ? CircularProgressIndicator(
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            )
+                          : Text(
+                              'Sign In',
+                              style: GoogleFonts.lato(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  ],
                 ),
               ),
             ),
-        ],
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 20,
+              child: Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => SignUpScreen()),
+                  ),
+                  child: Text(
+                    "Don't have an account? Sign Up",
+                    style: GoogleFonts.lato(
+                      color: Colors.black,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (isLoading)
+              Positioned(
+                child: Container(
+                  color: Colors.black.withOpacity(0.5),
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget buildTextField({
+    required TextEditingController controller,
+    required String label,
+    TextInputType keyboardType = TextInputType.text,
+    TextInputFormatter? inputFormatter,
+    bool initiallyObscure = false,
+  }) {
+    bool obscureText = initiallyObscure;
+    // Use a StatefulBuilder to rebuild just the TextField when the icon is tapped
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: label,
+              labelStyle: GoogleFonts.lato(),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              suffixIcon: label == 'Password'
+                  ? IconButton(
+                      icon: Icon(
+                        obscureText ? Icons.visibility_off : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() => obscureText = !obscureText);
+                      },
+                    )
+                  : null,
+            ),
+            obscureText: obscureText,
+            keyboardType: keyboardType,
+            inputFormatters: inputFormatter != null ? [inputFormatter] : [],
+          ),
+        );
+      },
     );
   }
 }

@@ -31,13 +31,13 @@ class _EnterCNICState extends State<EnterCNIC> {
   String _getTransferType(String type) {
     switch (type) {
       case "Sell (Beh)":
-        return "Selling";
+        return "selling";
       case "Gift (Hiba)":
-        return "Gift";
+        return "gift";
       case "Death Transfer (Wirasat)":
-        return "Death Mutation";
+        return "death_mutation";
       case "In-Life Transfer (Tamleeq)":
-        return "In Life Mutation";
+        return "in_life_mutation";
       default:
         return "Unknown";
     }
@@ -64,8 +64,7 @@ class _EnterCNICState extends State<EnterCNIC> {
                         address: walletAddress,
                         chain: 'sepolia',
                         landTransferData: widget.landTransferData,
-                      ) 
-                  ));
+                      )));
         } else {
           // Optionally, handle the case where wallet address fetch fails
           // For example, show an error message

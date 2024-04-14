@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../Functionality/CNICInputFormatter.dart';
 import 'SignInScreen.dart'; // Make sure this import is correct based on your project structure
 import '../Functionality/SignUpAuth.dart'; // Replace with the correct import path for your AuthService
@@ -19,114 +21,149 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController mobileNumberController = TextEditingController();
   final TextEditingController cnicController = TextEditingController();
   bool isLoading = false; // Loading state variable
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          CustomScrollView(
-            slivers: <Widget>[
-              SliverAppBar(
-                expandedHeight: 150.0,
-                pinned: true,
-                flexibleSpace: FlexibleSpaceBar(
-                  title: const Text('Sign Up',
-                      style: TextStyle(color: Colors.white)),
-                  background: Image.network(
-                    'https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Field_in_K%C3%A4rk%C3%B6l%C3%A4.jpg/275px-Field_in_K%C3%A4rk%C3%B6l%C3%A4.jpg',
-                    fit: BoxFit.cover,
-                  ),
+      backgroundColor: Colors.grey[200],
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Positioned(
+              top: 20,
+              left: 20,
+              right: 20,
+              child: Text(
+                'Sign Up',
+                style: GoogleFonts.lato(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
                 ),
-              ),
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: <Widget>[
-                      TextField(
-                        controller: usernameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Username',
-                          hintText: 'Enter your username',
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: emailController,
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                          hintText: 'Enter your email',
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Full Name',
-                          hintText: 'Enter your full name',
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: mobileNumberController,
-                        decoration: const InputDecoration(
-                          labelText: 'Mobile Number',
-                          hintText: 'Enter your mobile number',
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: cnicController,
-                        decoration: const InputDecoration(
-                          labelText: 'CNIC',
-                          hintText: 'Enter your CNIC',
-                        ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [CNICInputFormatter()],
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: passwordController,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Password',
-                          hintText: 'Enter your password',
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                        ),
-                        onPressed: () => handleRegistration(context),
-                        child: const Text('Sign Up',
-                            style: TextStyle(color: Colors.white)),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const SignInScreen()),
-                        ),
-                        child: const Text('Already have an account? Sign In'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (isLoading) // Loading overlay
-            Container(
-              color: Colors.black.withOpacity(0.5),
-              child: const Center(
-                child: CircularProgressIndicator(),
+                textAlign: TextAlign.center,
               ),
             ),
-        ],
+            Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    SizedBox(height: 80), // Space to move the form down a bit
+                    buildTextField(usernameController, 'Username'),
+                    buildTextField(emailController, 'Email'),
+                    buildTextField(nameController, 'Full Name'),
+                    buildTextField(mobileNumberController, 'Mobile Number',
+                        keyboardType: TextInputType.phone),
+                    buildTextField(cnicController, 'CNIC',
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [CNICInputFormatter()]),
+                    buildTextField(passwordController, 'Password',
+                        initiallyObscure: true),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      onPressed: () => handleRegistration(context),
+                      child: isLoading
+                          ? CircularProgressIndicator(
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            )
+                          : Text(
+                              'Sign Up',
+                              style: GoogleFonts.lato(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 20,
+              child: Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const SignInScreen()),
+                  ),
+                  child: Text(
+                    "Already have an account? Sign In",
+                    style: GoogleFonts.lato(
+                      color: Colors.black,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (isLoading)
+              Positioned(
+                child: Container(
+                  color: Colors.black.withOpacity(0.5),
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget buildTextField(
+    TextEditingController controller,
+    String label, {
+    bool initiallyObscure = false,
+    TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
+  }) {
+    bool obscureText = initiallyObscure;
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: label,
+              labelStyle: GoogleFonts.lato(),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              suffixIcon: label == 'Password'
+                  ? IconButton(
+                      icon: Icon(
+                        obscureText ? Icons.visibility_off : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() => obscureText = !obscureText);
+                      },
+                    )
+                  : null,
+            ),
+            obscureText: obscureText,
+            keyboardType: keyboardType,
+            inputFormatters: inputFormatters ?? [],
+          ),
+        );
+      },
     );
   }
 

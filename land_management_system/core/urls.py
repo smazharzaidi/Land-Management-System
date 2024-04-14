@@ -15,4 +15,14 @@ urlpatterns = [
         get_cnic_from_email,
         name="get_cnic_by_email",
     ),
+    path(
+        "get_scheduled_datetimes/",
+        get_scheduled_datetimes,
+        name="get_scheduled_datetimes",
+    ),
+    path("get_pending_transfers/", get_pending_transfers, name="get_pending_transfers"),
+    path(
+        "get_approved_transfers/", get_approved_transfers, name="get_approved_transfers"
+    ),
+    path("resend_confirmation/", resend_confirmation_email, name="resend_confirmation"),
 ]

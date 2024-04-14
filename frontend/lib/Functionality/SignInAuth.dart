@@ -9,13 +9,13 @@ import 'package:web3modal_flutter/web3modal_flutter.dart';
 import 'LandTransferData.dart';
 
 class AuthServiceLogin {
-  final String baseURL = "http://192.168.1.12:8000/";
+  final String baseURL = "http://192.168.1.10:8000/";
   LandTransferData? landTransferData;
   static LandTransferData? currentLandTransferData;
   late W3MService _w3mService;
-  final loginUri = Uri.parse("http://192.168.1.12:8000/login/");
+  final loginUri = Uri.parse("http://192.168.1.10:8000/login/");
   final refreshTokenUri =
-      Uri.parse("http://192.168.1.12:8000/api/token/refresh/");
+      Uri.parse("http://192.168.1.10:8000/api/token/refresh/");
   final storage = SecureStorageService();
   Future<String?> getToken() async {
     return await storage.getToken();
@@ -33,9 +33,10 @@ class AuthServiceLogin {
     return username;
   }
 
-  Future<bool> login(String username, String password) async {
+  Future<String> login(String username, String password) async {
     var response = await http.post(
       loginUri,
+      headers: {"Content-Type": "application/x-www-form-urlencoded"},
       body: {"username": username, "password": password},
     );
 
@@ -73,18 +74,41 @@ class AuthServiceLogin {
           await storage.saveWalletAddress(walletAddress);
         }
 
-        // Save username or other necessary details
+        // Other necessary details can be saved as needed here
 
-        return true; // Indicate successful login
+        return "success"; // Return "success" if login was successful
       } else {
-        // Handle scenario when 'access' token is not in the response
-        print("Login failed: Access token missing in the response");
-        return false;
+        return "Access token missing in the response"; // Specific error if token is missing
+      }
+    } else if (response.statusCode == 400) {
+      var data = json.decode(response.body);
+      if (data['error'] != null) {
+        return data[
+            'error']; // Return the specific error message from the response
+      } else {
+        return "Invalid credentials"; // Generic error for 400 status
       }
     } else {
-      // Handle HTTP response other than 200 OK
-      print("Login failed: HTTP status code ${response.statusCode}");
-      return false;
+      // Handle other HTTP responses
+      return "Login failed with status code ${response.statusCode}.";
+    }
+  }
+
+  Future<String> resendConfirmationEmail(String email) async {
+    try {
+      var response = await http.post(
+        Uri.parse("${baseURL}resend_confirmation/"),
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: {"email": email},
+      );
+
+      if (response.statusCode == 200) {
+        return "Confirmation email resent. Please check your inbox.";
+      } else {
+        return "Failed to resend confirmation email.";
+      }
+    } catch (e) {
+      return "An error occurred while trying to resend confirmation email: ${e.toString()}";
     }
   }
 
@@ -143,7 +167,7 @@ class AuthServiceLogin {
     if (refreshToken != null) {
       var response = await http.post(
         Uri.parse(
-            "http://192.168.1.12:8000/logout/"), // Adjust the URL to your backend's logout endpoint
+            "http://192.168.1.10:8000/logout/"), // Adjust the URL to your backend's logout endpoint
         body: jsonEncode({"refresh": refreshToken}),
         headers: {"Content-Type": "application/json"},
       );

@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'UI/DashboardScreen.dart'; // Adjust the import paths as necessary
@@ -49,6 +49,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         theme: ThemeData(
           primarySwatch: Colors.green,
           visualDensity: VisualDensity.adaptivePlatformDensity,
+          textTheme: GoogleFonts.latoTextTheme(
+            Theme.of(context).textTheme,
+          ),
         ),
         home: FutureBuilder<bool>(
           future: _authService.isTokenValidAndNotExpired(),

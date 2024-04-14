@@ -1,6 +1,6 @@
 import datetime
-from django.shortcuts import render, redirect
-from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.contrib.auth import authenticate, get_user_model
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
@@ -14,7 +14,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -24,6 +24,11 @@ from moralis import evm_api
 import os
 from django.contrib.auth.decorators import login_required
 from rest_framework_simplejwt.authentication import JWTAuthentication
+import logging
+from django.utils import timezone
+from django.db.models import Q
+
+logger = logging.getLogger(__name__)
 
 
 # Load environment variables
@@ -44,6 +49,58 @@ def get_wallet_address(request):
 
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_scheduled_datetimes(request):
+    scheduled_datetimes = (
+        LandTransfer.objects.filter(
+            status="pending"  # Or any other criteria you deem necessary
+        )
+        .order_by("scheduled_datetime")
+        .values_list("scheduled_datetime", flat=True)
+        .distinct()
+    )
+
+    # Convert datetime objects to strings
+    scheduled_datetimes_str = [
+        dt.strftime("%Y-%m-%dT%H:%M:%S") for dt in scheduled_datetimes if dt is not None
+    ]
+
+    return JsonResponse({"scheduled_datetimes": scheduled_datetimes_str}, safe=False)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def create_land_transfer(request):
+    logger.debug("Received create_land_transfer request: %s", request.data)
+    logger.debug("Received create_land_transfer request with data: %s", request.data)
+    # Extracting data from request
+    data = request.data
+    transferor_user = get_object_or_404(User, cnic=data["transferorCNIC"])
+    transferee_user = get_object_or_404(User, cnic=data["transfereeCNIC"])
+    land = get_object_or_404(
+        Land,
+        tehsil=data["landTehsil"],
+        khasra_number=data["landKhasra"],
+        division=data["landDivision"],
+    )
+    logger.debug("Transfer Type received: %s", data.get("transferType"))
+
+    # Creating the LandTransfer record
+    land_transfer = LandTransfer.objects.create(
+        land=land,
+        transferor_user=transferor_user,
+        transferee_user=transferee_user,
+        transfer_type=data["transferType"],
+        status="pending",
+        scheduled_datetime=data[
+            "scheduledDatetime"
+        ],  # Assuming the frontend sends this in a suitable format
+    )
+
+    return Response({"status": "success", "transfer_id": land_transfer.id})
+
+
+@api_view(["GET"])
 @permission_classes([IsAuthenticated])  # Ensure only authenticated users can access
 def get_cnic_from_email(request, email):
     try:
@@ -53,38 +110,6 @@ def get_cnic_from_email(request, email):
         )  # Assuming CNIC is stored in a related profile model
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status=404)
-
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def create_land_transfer(request):
-    data = json.loads(request.body.decode("utf-8"))
-    khasra_number = data.get("khasraNumber")
-    transferee_cnic = data.get("transfereeCNIC")
-    transfer_type = data.get("transferType")
-
-    try:
-        land = Land.objects.get(khasra_number=khasra_number)
-        transferor_user = request.user
-        transferee_user = User.objects.get(cnic=transferee_cnic)
-
-        land_transfer = LandTransfer.objects.create(
-            land=land,
-            transferor_user=transferor_user,
-            transferee_user=transferee_user,
-            transfer_type=transfer_type,
-            status="pending",
-        )
-        return JsonResponse(
-            {"success": True, "message": "Land transfer initiated successfully."}
-        )
-
-    except Land.DoesNotExist:
-        return JsonResponse({"success": False, "error": "Land not found."}, status=404)
-    except User.DoesNotExist:
-        return JsonResponse(
-            {"success": False, "error": "Transferee user not found."}, status=404
-        )
 
 
 @api_view(["POST"])
@@ -181,6 +206,13 @@ def aPage(request):
                 {"errors": "This CNIC is already in use. Please use a different CNIC."},
                 status=400,
             )
+        if User.objects.filter(email=email).exists():
+            return JsonResponse(
+                {
+                    "errors": "This email is already in use. Please use a different email."
+                },
+                status=400,
+            )
 
         try:
             # Create user with the default role set to 'user'
@@ -240,6 +272,46 @@ def aPage(request):
         return render(request, "registration_form.html")
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_approved_transfers(request):
+    user = request.user
+    approved_transfers = LandTransfer.objects.filter(
+        transferee_user=user, status="approved", transfer_date__isnull=True
+    ).values(
+        "id",
+        "land__khasra_number",
+        "scheduled_datetime",
+        "transfer_type",
+        "transferor_user__cnic",
+        "land__tehsil",
+        "land__division",
+    )
+    return Response(list(approved_transfers))
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_pending_transfers(request):
+    user = request.user
+    # Fetch transfers that are either pending or are approved but without a transfer date
+    pending_transfers = LandTransfer.objects.filter(
+        Q(status="pending") | Q(status="approved", transfer_date__isnull=True),
+        transferor_user=user,
+    ).values(
+        "id",
+        "land__khasra_number",
+        "scheduled_datetime",
+        "transfer_type",
+        "transferee_user__cnic",
+        "land__tehsil",
+        "land__division",
+        "status",  # Make sure to include the status in your values list
+    )
+
+    return Response(list(pending_transfers))
+
+
 @csrf_exempt
 @api_view(["POST"])
 def logout_view(request):
@@ -255,35 +327,25 @@ def logout_view(request):
 @csrf_exempt
 def login_view(request):
     if request.method == "POST":
-        username = request.POST.get("username")
+        login = request.POST.get("username")
         password = request.POST.get("password")
-        user = None
+        try:
+            if "@" in login:
+                user = get_user_model().objects.get(email=login)
+            else:
+                user = get_user_model().objects.get(cnic=login)
+            if not EmailAddress.objects.filter(user=user, verified=True).exists():
+                return JsonResponse(
+                    {"error": "Email not verified. Please verify your email."},
+                    status=400,
+                )
+            user = authenticate(request, username=user.username, password=password)
 
-        # Determine if username is an email or CNIC
-        if "@" in username:
-            try:
-                user = get_user_model().objects.get(email=username)
-            except get_user_model().DoesNotExist:
-                pass
-        else:
-            try:
-                user = get_user_model().objects.get(cnic=username)
-            except get_user_model().DoesNotExist:
-                pass
-
-        if user is not None:
-            # Authenticate user
-            authentication_result = authenticate(
-                request, username=user.username, password=password
-            )
-            if authentication_result is not None:
-                # Use TokenObtainPairSerializer to validate and create a token
+            if user:
                 serializer = TokenObtainPairSerializer(
                     data={"username": user.username, "password": password}
                 )
-                # Validate serializer with user's credentials
                 if serializer.is_valid():
-                    # Generate token
                     token = serializer.validated_data
                     return JsonResponse(
                         {
@@ -293,17 +355,39 @@ def login_view(request):
                             "user": {
                                 "username": user.username,
                                 "email": user.email,
-                                "wallet_address": user.wallet_address,  # Include wallet address in response
+                                "wallet_address": user.wallet_address,
                             },
                         },
                         status=200,
                     )
-
                 else:
                     return JsonResponse({"error": "Invalid credentials"}, status=400)
             else:
                 return JsonResponse({"error": "Invalid login or password."}, status=400)
-        else:
-            return JsonResponse({"error": "Invalid login or password."}, status=400)
+
+        except get_user_model().DoesNotExist:
+            return JsonResponse({"error": "User does not exist."}, status=400)
     else:
-        return render(request, "login.html")
+        return render(
+            request,
+            "login_prompt.html",
+            {"message": "Your email has been verified, please log in through the app."},
+        )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])  # Allow access without authentication
+def resend_confirmation_email(request):
+    email = request.data.get("email")
+    try:
+        user = get_user_model().objects.get(email=email)
+        email_address = EmailAddress.objects.get(user=user, email=email)
+        if not email_address.verified:
+            send_email_confirmation(request, user)
+            return JsonResponse({"message": "Confirmation email resent."}, status=200)
+        else:
+            return JsonResponse({"message": "Email already verified."}, status=400)
+    except get_user_model().DoesNotExist:
+        return JsonResponse({"error": "Email not found."}, status=404)
+    except EmailAddress.DoesNotExist:
+        return JsonResponse({"error": "Email address not found."}, status=404)

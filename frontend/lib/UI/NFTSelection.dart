@@ -97,7 +97,7 @@ class _NFTSelectionState extends State<NFTSelection> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => FingerPrinting(
-                                  nftData: nft, // Pass the NFT data as needed
+                                  landTransferData: widget.landTransferData,
                                 ),
                               ),
                             );

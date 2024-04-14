@@ -2,8 +2,15 @@
 
 import 'package:flutter/material.dart';
 
+import '../Functionality/LandTransferData.dart';
+import 'MarkedLand.dart';
+
 class FingerPrinting extends StatelessWidget {
-  const FingerPrinting({Key? key, required nftData}) : super(key: key);
+  final LandTransferData landTransferData;
+  const FingerPrinting({
+    Key? key,
+    required this.landTransferData,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -56,9 +63,16 @@ class FingerPrinting extends StatelessWidget {
                   backgroundColor: Colors.green,
                 ),
                 onPressed: () {
-                  // Implement what happens when 'Next' is pressed
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          MarkedLand(landTransferData: landTransferData),
+                    ),
+                  );
                 },
-                child: const Text('Next', style: TextStyle(color: Colors.white)),
+                child:
+                    const Text('Next', style: TextStyle(color: Colors.white)),
               ),
             ),
           ],

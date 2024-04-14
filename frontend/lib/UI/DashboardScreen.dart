@@ -1,5 +1,5 @@
 // ignore_for_file: file_names
-
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/UI/EnterCNIC.dart';
 import 'package:frontend/UI/SignInScreen.dart';
@@ -8,6 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web3modal_flutter/web3modal_flutter.dart';
 import 'NFTWalletScreen.dart';
 import '../Functionality/SignInAuth.dart';
+import '../Functionality/TransferService.dart';
+import 'TaxChallanScreen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final AuthServiceLogin authService;
@@ -21,12 +23,52 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   late DashboardLogic _logic;
+  List<dynamic>? pendingTransfers = null;
+  List<dynamic>? approvedTransfers = null;
 
   @override
   void initState() {
     super.initState();
     _logic = DashboardLogic();
     _logic.initializeState();
+    fetchPendingTransfers();
+    fetchApprovedTransfers();
+  }
+
+  Future<void> fetchPendingTransfers() async {
+    final TransferService service = TransferService();
+    try {
+      var fetchedTransfers = await service.fetchPendingTransfers();
+      setState(() {
+        pendingTransfers =
+            fetchedTransfers; // Even if empty, it's now initialized
+      });
+    } catch (e) {
+      print('Failed to fetch pending transfers: $e');
+      setState(() {
+        pendingTransfers =
+            []; // Initialize to empty to indicate finished attempt
+      });
+      // Optionally, show an error message or handle the error appropriately
+    }
+  }
+
+  Future<void> fetchApprovedTransfers() async {
+    final TransferService service = TransferService();
+    try {
+      var fetchedTransfers = await service.fetchApprovedTransfers();
+      setState(() {
+        approvedTransfers =
+            fetchedTransfers; // Even if empty, it's now initialized
+      });
+    } catch (e) {
+      print('Failed to fetch approved transfers: $e');
+      setState(() {
+        approvedTransfers =
+            []; // Initialize to empty to indicate finished attempt
+      });
+      // Optionally, show an error message or handle the error appropriately
+    }
   }
 
   @override
@@ -117,25 +159,226 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ],
                 ),
-                SliverFillRemaining(
-                  child: Center(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.0),
+                SliverList(
+                  delegate: SliverChildListDelegate([
+                    Center(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                        ),
+                        onPressed: () => _showTransferTypes(context),
+                        child: const Text(
+                          'Initiate Transfers',
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
-                      onPressed: () => _showTransferTypes(context),
-                      child: const Text(
-                        'Initiate Transfers',
-                        style: TextStyle(color: Colors.white),
-                      ),
                     ),
-                  ),
+                    SizedBox(height: 20), // Add some spacing
+                    _buildPendingTransfersTable(), // Use the new table method
+                    _buildApprovedTransfersTable(),
+                  ]),
                 ),
               ],
             ),
+    );
+  }
+
+  Widget _buildPendingTransfersTable() {
+    if (pendingTransfers == null) {
+      // Show loading indicator
+      return Center(child: CircularProgressIndicator());
+    }
+
+    if (pendingTransfers!.isEmpty) {
+      // If there are no pending transfers, display a message
+      return Center(child: Text("No outgoing pending transfers"));
+    }
+
+    // Adding a column for action buttons
+    List<DataColumn> columns = [
+      DataColumn(
+          label: Text('CNIC', style: TextStyle(fontWeight: FontWeight.bold))),
+      DataColumn(
+          label: Text('Khasra', style: TextStyle(fontWeight: FontWeight.bold))),
+      DataColumn(
+          label: Text('Tehsil', style: TextStyle(fontWeight: FontWeight.bold))),
+      DataColumn(
+          label:
+              Text('Division', style: TextStyle(fontWeight: FontWeight.bold))),
+      DataColumn(
+          label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+      DataColumn(
+          label: Text('Action',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold))), // Action button column
+    ];
+
+    List<DataRow> rows = pendingTransfers!.map<DataRow>((transfer) {
+      IconData statusIcon;
+      Color iconColor;
+
+      switch (transfer['status']) {
+        case 'approved':
+          statusIcon = Icons.check_circle_outline;
+          iconColor = Colors.green;
+          break;
+        case 'pending':
+          statusIcon = Icons.hourglass_empty;
+          iconColor = Colors.orange;
+          break;
+        case 'disapproved':
+          statusIcon = Icons.cancel_outlined;
+          iconColor = Colors.red;
+          break;
+        default:
+          statusIcon = Icons.help_outline;
+          iconColor = Colors.grey;
+      }
+
+      return DataRow(
+        cells: [
+          DataCell(Text(transfer['transferee_user__cnic'])),
+          DataCell(Text(transfer['land__khasra_number'])),
+          DataCell(Text(transfer['land__tehsil'])),
+          DataCell(Text(transfer['land__division'])),
+          DataCell(Icon(statusIcon, color: iconColor)),
+          DataCell(IconButton(
+            icon: Icon(Icons.info_outline, color: Colors.blue),
+            onPressed: () {
+              // Check if status is "approved" and transfer_date is null (or you can adapt this condition as necessary)
+              if (transfer['status'] == 'approved' &&
+                  transfer['transfer_date'] == null) {
+                // Navigate to TaxChallanScreen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => TaxChallanScreen()),
+                );
+              } else if (transfer['status'] == 'pending') {
+                // Show the scheduled meeting dialog for pending status
+                _showScheduledMeetingDialog(context, transfer);
+              }
+              // You can add more conditions here for other statuses or actions
+            },
+          )),
+        ],
+      );
+    }).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            'Pending Transfers',
+            style: TextStyle(
+                fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+          ),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(columns: columns, rows: rows),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildApprovedTransfersTable() {
+    if (approvedTransfers == null) {
+      // Show loading indicator
+      return Center(child: CircularProgressIndicator());
+    }
+
+    // If there are no approved transfers, display a message
+    if (approvedTransfers!.isEmpty) {
+      return Center(child: Text("No approved transfers as transferee"));
+    }
+
+    // Define table column headers
+    List<DataColumn> columns = [
+      DataColumn(
+          label: Text('CNIC', style: TextStyle(fontWeight: FontWeight.bold))),
+      DataColumn(
+          label: Text('Khasra', style: TextStyle(fontWeight: FontWeight.bold))),
+      DataColumn(
+          label: Text('Tehsil', style: TextStyle(fontWeight: FontWeight.bold))),
+      DataColumn(
+          label:
+              Text('Division', style: TextStyle(fontWeight: FontWeight.bold))),
+      DataColumn(
+          label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+      DataColumn(
+          label: Text('Action',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold))), // Action button column
+    ];
+
+    // Define table rows based on approved transfers
+    List<DataRow> rows = approvedTransfers!.map<DataRow>((transfer) {
+      IconData statusIcon = Icons.check_circle_outline;
+      Color iconColor = Colors.green;
+
+      return DataRow(cells: [
+        DataCell(Text(transfer['transferor_user__cnic'])),
+        DataCell(Text(transfer['land__khasra_number'])),
+        DataCell(Text(transfer['land__tehsil'])),
+        DataCell(Text(transfer['land__division'])),
+        DataCell(Icon(statusIcon, color: iconColor)),
+        DataCell(IconButton(
+          icon: Icon(Icons.event_available, color: Colors.blue),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => TaxChallanScreen()),
+            );
+          },
+        )),
+      ]);
+    }).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            'Approved Transfers',
+            style: TextStyle(
+                fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+          ),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(columns: columns, rows: rows),
+        ),
+      ],
+    );
+  }
+
+  void _showScheduledMeetingDialog(BuildContext context, dynamic transfer) {
+    // Extracting and formatting the scheduled date and time
+    DateTime scheduledDateTime = DateTime.parse(transfer['scheduled_datetime']);
+    String formattedDateTime =
+        DateFormat('yyyy-MM-dd – kk:mm').format(scheduledDateTime);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Meeting Scheduled'),
+          content: Text(
+              'You are scheduled to meet the tehsildar on $formattedDateTime. Please be on time.'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('OK'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        );
+      },
     );
   }
 

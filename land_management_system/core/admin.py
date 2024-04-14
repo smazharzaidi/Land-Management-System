@@ -20,7 +20,7 @@ class LandTransferAdmin(admin.ModelAdmin):
         "transferee_user",
         "transfer_type",
         "status",
-        "scheduled_date",
+        "scheduled_datetime",
         "transfer_date",
     )
     search_fields = (
