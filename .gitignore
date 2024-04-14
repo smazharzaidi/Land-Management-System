@@ -1,4 +1,5 @@
 land_management_system/db.sqlite3
+land_management_system/.env
 node_modules
 .env
 
