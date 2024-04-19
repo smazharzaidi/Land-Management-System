@@ -22,7 +22,6 @@ class LandTransferData {
         landKhasra = '',
         landDivision = '';
 
-  // You might want to add methods to update or clear the data, for example:
   void updateTransferorCNIC(String cnic) {
     transferorCNIC = cnic;
   }

@@ -27,13 +27,83 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 import logging
 from django.utils import timezone
 from django.db.models import Q
+from django.core.mail import send_mail
+from django.conf import settings
+from allauth.account.forms import ResetPasswordForm
+
 
 logger = logging.getLogger(__name__)
-
+User = get_user_model()
 
 # Load environment variables
 load_dotenv()
 api_key = os.getenv("MORALIS_API_KEY")
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_user_profile(request):
+    user = request.user
+    return JsonResponse(
+        {
+            "email": user.email,
+            "mobile_number": user.mobile_number,
+            # Add other fields if necessary
+        }
+    )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def update_user_profile(request):
+    user = request.user
+    data = json.loads(request.body)
+    email = data.get("email")
+    mobile_number = data.get("mobile_number")
+
+    # Here you should add validation for the input data
+    # For example, check if the email is in a correct format and if the mobile number is valid
+
+    # After validation
+    user.email = email
+    user.mobile_number = mobile_number
+    user.save()
+
+    return JsonResponse({"status": "success"})
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def forgot_password(request):
+    email_or_cnic = request.data.get("email_or_cnic")
+
+    # Check if it's an email or CNIC and retrieve the associated email
+    if "@" in email_or_cnic:
+        email = email_or_cnic
+    else:
+        user = get_object_or_404(User, cnic=email_or_cnic)
+        email = user.email
+
+    # Create a form instance with the email
+    form = ResetPasswordForm(data={"email": email})
+
+    # Check if the form is valid and send the reset email
+    if form.is_valid():
+        form.save(request=request)
+        masked_email = mask_email(email)
+        return Response(
+            {
+                "message": f"We've sent an email to your mail {masked_email}. Please check your inbox to reset your password."
+            },
+            status=status.HTTP_200_OK,
+        )
+    return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+def mask_email(email):
+    local_part, domain = email.split("@")
+    masked_local = local_part[0] + "****" + local_part[-1]
+    return masked_local + "@" + domain
 
 
 @api_view(["GET"])
@@ -376,11 +446,18 @@ def login_view(request):
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])  # Allow access without authentication
+@permission_classes([AllowAny])
 def resend_confirmation_email(request):
-    email = request.data.get("email")
+    email = request.data.get("email_or_cnic")
     try:
-        user = get_user_model().objects.get(email=email)
+        # Determine if the identifier is an email or CNIC
+        if "@" in email:
+            user = get_user_model().objects.get(email=email)
+        else:
+            user = get_user_model().objects.get(cnic=email)
+            email = user.email  # Update identifier to the user's email
+
+        # Now proceed with the existing logic using the email
         email_address = EmailAddress.objects.get(user=user, email=email)
         if not email_address.verified:
             send_email_confirmation(request, user)
@@ -388,6 +465,6 @@ def resend_confirmation_email(request):
         else:
             return JsonResponse({"message": "Email already verified."}, status=400)
     except get_user_model().DoesNotExist:
-        return JsonResponse({"error": "Email not found."}, status=404)
+        return JsonResponse({"error": "Identifier not found."}, status=404)
     except EmailAddress.DoesNotExist:
         return JsonResponse({"error": "Email address not found."}, status=404)

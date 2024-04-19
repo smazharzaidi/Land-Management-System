@@ -25,4 +25,7 @@ urlpatterns = [
         "get_approved_transfers/", get_approved_transfers, name="get_approved_transfers"
     ),
     path("resend_confirmation/", resend_confirmation_email, name="resend_confirmation"),
+    path("forgot_password/", forgot_password, name="forgot_password"),
+    path("get_user_profile/", get_user_profile, name="get_user_profile"),
+    path("update_user_profile/", update_user_profile, name="update_user_profile"),
 ]

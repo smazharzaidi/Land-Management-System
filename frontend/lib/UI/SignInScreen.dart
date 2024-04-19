@@ -14,6 +14,8 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
+  final TextEditingController forgotPasswordController =
+      TextEditingController();
   bool isEmail = true;
   bool isLoading = false; // Added loading state variable
   TextEditingController signInController = TextEditingController();
@@ -90,6 +92,55 @@ class _SignInScreenState extends State<SignInScreen> {
               Navigator.of(ctx).pop();
             },
           )
+        ],
+      ),
+    );
+  }
+
+  void _forgotPassword() async {
+    final emailOrCnic = forgotPasswordController.text.trim();
+    if (emailOrCnic.isEmpty) {
+      _showMessage('Please enter your email or CNIC.');
+      return;
+    }
+
+    try {
+      setState(() => isLoading = true);
+      final message = await _authService.forgotPassword(emailOrCnic);
+      _showMessage(message);
+    } catch (e) {
+      _showMessage('An error occurred. Please try again.');
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _showForgotPasswordDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Forgot Password'),
+        content: TextField(
+          controller: forgotPasswordController,
+          decoration: InputDecoration(hintText: 'Enter your email or CNIC'),
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: Text('Cancel'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          TextButton(
+            child: Text('Reset Password'),
+            onPressed: () {
+              _forgotPassword();
+              Navigator.of(context).pop();
+            },
+          ),
         ],
       ),
     );
@@ -183,6 +234,13 @@ class _SignInScreenState extends State<SignInScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
+                    ),
+                    TextButton(
+                      onPressed: _showForgotPasswordDialog,
+                      child: Text(
+                        'Forgot Password?',
+                        style: TextStyle(color: Colors.blueAccent),
+                      ),
                     ),
                   ],
                 ),

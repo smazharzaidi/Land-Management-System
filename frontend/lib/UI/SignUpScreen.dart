@@ -20,7 +20,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController mobileNumberController = TextEditingController();
   final TextEditingController cnicController = TextEditingController();
-  bool isLoading = false; // Loading state variable
+  bool isLoading = false; 
   @override
   Widget build(BuildContext context) {
     return Scaffold(

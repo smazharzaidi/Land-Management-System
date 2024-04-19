@@ -1,5 +1,7 @@
 // ignore_for_file: file_names
+import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/UI/EnterCNIC.dart';
 import 'package:frontend/UI/SignInScreen.dart';
@@ -9,6 +11,7 @@ import 'package:web3modal_flutter/web3modal_flutter.dart';
 import 'NFTWalletScreen.dart';
 import '../Functionality/SignInAuth.dart';
 import '../Functionality/TransferService.dart';
+import 'ProfileScreen.dart';
 import 'TaxChallanScreen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -73,288 +76,242 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.green,
-              ),
-              child: Text(
-                'Menu',
-                style: TextStyle(
-                  color: Colors.white,
+    if (_logic.isLoggingOut) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    } else {
+      return Scaffold(
+        backgroundColor: Colors.grey[200],
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(60.0),
+          child: AppBar(
+            elevation: 0,
+            backgroundColor: Colors.grey[200],
+            title: Text(
+              'Dashboard',
+              style: GoogleFonts.lato(
+                  color: Colors.black,
                   fontSize: 24,
+                  fontWeight: FontWeight.bold),
+            ),
+            centerTitle: true,
+            actions: <Widget>[
+              IconButton(
+                icon: Icon(Icons.account_circle, color: Colors.black),
+                onPressed: () => _showProfileOptions(context),
+              ),
+            ],
+          ),
+        ),
+        drawer: Drawer(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: <Widget>[
+              DrawerHeader(
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                ),
+                child: Text(
+                  'Menu',
+                  style: GoogleFonts.lato(color: Colors.white, fontSize: 24),
                 ),
               ),
-            ),
-            ListTile(
-              leading:
-                  const Icon(Icons.account_balance_wallet, color: Colors.green),
-              title: const Text('Land Wallet'),
-              onTap: () async {
-                // Mark this callback as asynchronous
-                Navigator.of(context).pop(); // Close the drawer
+              ListTile(
+                title: Text('Land Wallet', style: GoogleFonts.lato()),
+                leading: const Icon(Icons.account_balance_wallet,
+                    color: Colors.black),
+                onTap: () async {
+                  // Mark this callback as asynchronous
+                  Navigator.of(context).pop(); // Close the drawer
 
-                String? walletAddress =
-                    await _logic.fetchWalletAddress(); // Await the result
-                if (walletAddress != null) {
-                  // Proceed with using the walletAddress
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          NFTListPage(address: walletAddress, chain: 'sepolia'),
-                    ),
-                  );
-                } else {
-                  // Handle the case where the wallet address is null
-                  // For example, show an error message
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text("Error"),
-                        content: Text("Failed to fetch wallet address."),
-                        actions: <Widget>[
-                          TextButton(
-                            child: Text("OK"),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                }
-              },
-            ),
-            // Add more ListTiles for other menu items
-          ],
+                  String? walletAddress =
+                      await _logic.fetchWalletAddress(); // Await the result
+                  if (walletAddress != null) {
+                    // Proceed with using the walletAddress
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => NFTListPage(
+                            address: walletAddress, chain: 'sepolia'),
+                      ),
+                    );
+                  } else {
+                    // Handle the case where the wallet address is null
+                    // For example, show an error message
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text("Error"),
+                          content: Text("Failed to fetch wallet address."),
+                          actions: <Widget>[
+                            TextButton(
+                              child: Text("OK"),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  }
+                },
+              ),
+              // Add more ListTiles for other menu items
+            ],
+          ),
         ),
-      ),
-      body: _logic.isLoggingOut
-          ? Center(child: CircularProgressIndicator())
-          : CustomScrollView(
-              slivers: <Widget>[
-                SliverAppBar(
-                  expandedHeight: 200.0,
-                  floating: false,
-                  pinned: true,
-                  backgroundColor: Colors.green, // Set background color
-                  flexibleSpace: FlexibleSpaceBar(
-                    title: const Text('Land Management Dashboard'),
-                    background: Image.network(
-                      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Field_in_K%C3%A4rk%C3%B6l%C3%A4.jpg/275px-Field_in_K%C3%A4rk%C3%B6l%C3%A4.jpg',
-                      fit: BoxFit.cover,
+        body: _logic.isLoggingOut
+            ? Center(child: CircularProgressIndicator())
+            : Padding(
+                padding: const EdgeInsets.all(12),
+                child: CustomScrollView(
+                  slivers: <Widget>[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text('Welcome to your dashboard!',
+                            style: GoogleFonts.lato(
+                                fontSize: 22, fontWeight: FontWeight.bold)),
+                      ),
                     ),
-                  ),
-                  actions: <Widget>[
-                    IconButton(
-                      icon: const Icon(Icons.account_circle),
-                      onPressed: () => _showProfileOptions(context),
+                    SliverList(
+                      delegate: SliverChildListDelegate([
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 90.0),
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                backgroundColor: Colors.green,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30.0)),
+                                padding: EdgeInsets.symmetric(vertical: 15.0)),
+                            onPressed: () => _showTransferTypes(context),
+                            child: const Text(
+                              'Initiate Transfer',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 20), // Add some spacing
+                        _buildPendingTransfersTable(), // Use the new table method
+                        _buildApprovedTransfersTable(),
+                      ]),
                     ),
                   ],
                 ),
-                SliverList(
-                  delegate: SliverChildListDelegate([
-                    Center(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                        ),
-                        onPressed: () => _showTransferTypes(context),
-                        child: const Text(
-                          'Initiate Transfers',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 20), // Add some spacing
-                    _buildPendingTransfersTable(), // Use the new table method
-                    _buildApprovedTransfersTable(),
-                  ]),
-                ),
-              ],
-            ),
-    );
+              ),
+      );
+    }
   }
 
   Widget _buildPendingTransfersTable() {
     if (pendingTransfers == null) {
-      // Show loading indicator
       return Center(child: CircularProgressIndicator());
     }
 
     if (pendingTransfers!.isEmpty) {
-      // If there are no pending transfers, display a message
       return Center(child: Text("No outgoing pending transfers"));
     }
 
-    // Adding a column for action buttons
-    List<DataColumn> columns = [
-      DataColumn(
-          label: Text('CNIC', style: TextStyle(fontWeight: FontWeight.bold))),
-      DataColumn(
-          label: Text('Khasra', style: TextStyle(fontWeight: FontWeight.bold))),
-      DataColumn(
-          label: Text('Tehsil', style: TextStyle(fontWeight: FontWeight.bold))),
-      DataColumn(
-          label:
-              Text('Division', style: TextStyle(fontWeight: FontWeight.bold))),
-      DataColumn(
-          label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-      DataColumn(
-          label: Text('Action',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold))), // Action button column
-    ];
+    return ListView.builder(
+      physics:
+          NeverScrollableScrollPhysics(), // to disable ListView's scrolling
+      shrinkWrap: true, // to make ListView occupy space only its children need
+      itemCount: pendingTransfers!.length,
+      itemBuilder: (context, index) {
+        var transfer = pendingTransfers![index];
+        IconData statusIcon;
+        Color iconColor;
 
-    List<DataRow> rows = pendingTransfers!.map<DataRow>((transfer) {
-      IconData statusIcon;
-      Color iconColor;
+        switch (transfer['status']) {
+          case 'approved':
+            statusIcon = Icons.check_circle_outline;
+            iconColor = Colors.green;
+            break;
+          case 'pending':
+            statusIcon = Icons.hourglass_empty;
+            iconColor = Colors.orange;
+            break;
+          case 'disapproved':
+            statusIcon = Icons.cancel_outlined;
+            iconColor = Colors.red;
+            break;
+          default:
+            statusIcon = Icons.help_outline;
+            iconColor = Colors.grey;
+        }
 
-      switch (transfer['status']) {
-        case 'approved':
-          statusIcon = Icons.check_circle_outline;
-          iconColor = Colors.green;
-          break;
-        case 'pending':
-          statusIcon = Icons.hourglass_empty;
-          iconColor = Colors.orange;
-          break;
-        case 'disapproved':
-          statusIcon = Icons.cancel_outlined;
-          iconColor = Colors.red;
-          break;
-        default:
-          statusIcon = Icons.help_outline;
-          iconColor = Colors.grey;
-      }
-
-      return DataRow(
-        cells: [
-          DataCell(Text(transfer['transferee_user__cnic'])),
-          DataCell(Text(transfer['land__khasra_number'])),
-          DataCell(Text(transfer['land__tehsil'])),
-          DataCell(Text(transfer['land__division'])),
-          DataCell(Icon(statusIcon, color: iconColor)),
-          DataCell(IconButton(
-            icon: Icon(Icons.info_outline, color: Colors.blue),
-            onPressed: () {
-              // Check if status is "approved" and transfer_date is null (or you can adapt this condition as necessary)
-              if (transfer['status'] == 'approved' &&
-                  transfer['transfer_date'] == null) {
-                // Navigate to TaxChallanScreen
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => TaxChallanScreen()),
-                );
-              } else if (transfer['status'] == 'pending') {
-                // Show the scheduled meeting dialog for pending status
-                _showScheduledMeetingDialog(context, transfer);
-              }
-              // You can add more conditions here for other statuses or actions
-            },
-          )),
-        ],
-      );
-    }).toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Text(
-            'Pending Transfers',
-            style: TextStyle(
-                fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+        return Card(
+          margin: EdgeInsets.symmetric(vertical: 8),
+          child: ListTile(
+            leading: Icon(statusIcon, color: iconColor),
+            title: Text(transfer['land__khasra_number']),
+            subtitle: Text(
+                'Tehsil: ${transfer['land__tehsil']}\nDivision: ${transfer['land__division']}'),
+            trailing: IconButton(
+              icon: Icon(Icons.info_outline, color: Colors.blue),
+              onPressed: () {
+                // Check if status is "approved" and transfer_date is null (or you can adapt this condition as necessary)
+                if (transfer['status'] == 'approved' &&
+                    transfer['transfer_date'] == null) {
+                  // Navigate to TaxChallanScreen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => TaxChallanScreen()),
+                  );
+                } else if (transfer['status'] == 'pending') {
+                  // Show the scheduled meeting dialog for pending status
+                  _showScheduledMeetingDialog(context, transfer);
+                }
+                // You can add more conditions here for other statuses or actions
+              },
+            ),
           ),
-        ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(columns: columns, rows: rows),
-        ),
-      ],
+        );
+      },
     );
   }
 
   Widget _buildApprovedTransfersTable() {
     if (approvedTransfers == null) {
-      // Show loading indicator
       return Center(child: CircularProgressIndicator());
     }
 
-    // If there are no approved transfers, display a message
     if (approvedTransfers!.isEmpty) {
       return Center(child: Text("No approved transfers as transferee"));
     }
 
-    // Define table column headers
-    List<DataColumn> columns = [
-      DataColumn(
-          label: Text('CNIC', style: TextStyle(fontWeight: FontWeight.bold))),
-      DataColumn(
-          label: Text('Khasra', style: TextStyle(fontWeight: FontWeight.bold))),
-      DataColumn(
-          label: Text('Tehsil', style: TextStyle(fontWeight: FontWeight.bold))),
-      DataColumn(
-          label:
-              Text('Division', style: TextStyle(fontWeight: FontWeight.bold))),
-      DataColumn(
-          label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-      DataColumn(
-          label: Text('Action',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold))), // Action button column
-    ];
-
-    // Define table rows based on approved transfers
-    List<DataRow> rows = approvedTransfers!.map<DataRow>((transfer) {
-      IconData statusIcon = Icons.check_circle_outline;
-      Color iconColor = Colors.green;
-
-      return DataRow(cells: [
-        DataCell(Text(transfer['transferor_user__cnic'])),
-        DataCell(Text(transfer['land__khasra_number'])),
-        DataCell(Text(transfer['land__tehsil'])),
-        DataCell(Text(transfer['land__division'])),
-        DataCell(Icon(statusIcon, color: iconColor)),
-        DataCell(IconButton(
-          icon: Icon(Icons.event_available, color: Colors.blue),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => TaxChallanScreen()),
-            );
-          },
-        )),
-      ]);
-    }).toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Text(
-            'Approved Transfers',
-            style: TextStyle(
-                fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+    return ListView.builder(
+      physics: NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      itemCount: approvedTransfers!.length,
+      itemBuilder: (context, index) {
+        var transfer = approvedTransfers![index];
+        return Card(
+          margin: EdgeInsets.symmetric(vertical: 8),
+          child: ListTile(
+            leading: Icon(Icons.check_circle_outline, color: Colors.green),
+            title: Text(transfer['land__khasra_number']),
+            subtitle: Text(
+                'Tehsil: ${transfer['land__tehsil']}\nDivision: ${transfer['land__division']}'),
+            trailing: IconButton(
+              icon: Icon(Icons.event_available, color: Colors.blue),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => TaxChallanScreen()),
+                );
+              },
+            ),
           ),
-        ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(columns: columns, rows: rows),
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -455,26 +412,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: ListBody(
               children: <Widget>[
                 ListTile(
-                  leading: const Icon(Icons.settings, color: Colors.green),
+                  leading: const Icon(Icons.settings, color: Colors.black),
                   title: const Text('Profile Setting'),
                   onTap: () {
-                    // Implement Profile Settings functionality
-                    Navigator.of(context)
-                        .pop(); // Close the dialog after the action
+                    Navigator.of(context).pop(); // Close the dialog
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const ProfileScreen(),
+                    ));
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.exit_to_app, color: Colors.green),
+                  leading: const Icon(Icons.exit_to_app, color: Colors.black),
                   title: const Text('Logout'),
                   onTap: () {
-                    _handleLogout(); // Simply call the logout method
+                    _handleLogout();
                   },
                 ),
                 W3MNetworkSelectButton(service: _logic.w3mService),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                  ),
+                FloatingActionButton(
+                  backgroundColor: Colors.green,
                   onPressed: _logic.requestWalletAddresses,
                   child: const Text(
                     'Link Permenantly',

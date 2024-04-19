@@ -88,7 +88,6 @@ class _NFTListPageState extends State<NFTListPage> {
                                     fontWeight: FontWeight.bold),
                               ),
                               Expanded(
-                                // Use Expanded widget for the image to fill available space
                                 child: Image.network(
                                   imageUrl,
                                   fit: BoxFit.cover,

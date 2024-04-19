@@ -36,3 +36,5 @@ urlpatterns = [
         RedirectView.as_view(pattern_name="login", permanent=False),
     ),
 ]
+
+

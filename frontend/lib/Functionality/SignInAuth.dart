@@ -9,16 +9,33 @@ import 'package:web3modal_flutter/web3modal_flutter.dart';
 import 'LandTransferData.dart';
 
 class AuthServiceLogin {
-  final String baseURL = "http://192.168.1.10:8000/";
+  final String baseURL = "http://192.168.1.16:8000/";
+
   LandTransferData? landTransferData;
   static LandTransferData? currentLandTransferData;
   late W3MService _w3mService;
-  final loginUri = Uri.parse("http://192.168.1.10:8000/login/");
+  final loginUri = Uri.parse("http://192.168.1.16:8000/login/");
   final refreshTokenUri =
-      Uri.parse("http://192.168.1.10:8000/api/token/refresh/");
+      Uri.parse("http://192.168.1.16:8000/api/token/refresh/");
   final storage = SecureStorageService();
   Future<String?> getToken() async {
     return await storage.getToken();
+  }
+
+  Future<String> forgotPassword(String emailOrCnic) async {
+    final uri = Uri.parse("${baseURL}forgot_password/");
+    final response = await http.post(
+      uri,
+      headers: {"Content-Type": "application/x-www-form-urlencoded"},
+      body: {"email_or_cnic": emailOrCnic},
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['message'];
+    } else {
+      return "An error occurred. Please try again.";
+    }
   }
 
   Future<void> saveUsername(String username) async {
@@ -96,10 +113,14 @@ class AuthServiceLogin {
 
   Future<String> resendConfirmationEmail(String email) async {
     try {
+      print(
+          "Attempting to POST to: ${Uri.parse("${baseURL}resend_confirmation/").toString()}");
+
+      print("Request URL: ${baseURL}resend_confirmation/");
       var response = await http.post(
-        Uri.parse("${baseURL}resend_confirmation/"),
+        Uri.parse("http://192.168.1.16:8000/resend_confirmation/"),
         headers: {"Content-Type": "application/x-www-form-urlencoded"},
-        body: {"email": email},
+        body: {"email_or_cnic": email},
       );
 
       if (response.statusCode == 200) {
@@ -167,7 +188,7 @@ class AuthServiceLogin {
     if (refreshToken != null) {
       var response = await http.post(
         Uri.parse(
-            "http://192.168.1.10:8000/logout/"), // Adjust the URL to your backend's logout endpoint
+            "http://192.168.1.16:8000/logout/"), // Adjust the URL to your backend's logout endpoint
         body: jsonEncode({"refresh": refreshToken}),
         headers: {"Content-Type": "application/json"},
       );
