@@ -1,6 +1,6 @@
 import datetime
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, FileResponse
 from django.contrib.auth import authenticate, get_user_model
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
@@ -30,6 +30,13 @@ from django.db.models import Q
 from django.core.mail import send_mail
 from django.conf import settings
 from allauth.account.forms import ResetPasswordForm
+from .serializers import *
+from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.gis.db.models.functions import Area
+from django.core.exceptions import ObjectDoesNotExist
+import io
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 
 logger = logging.getLogger(__name__)
@@ -38,6 +45,96 @@ User = get_user_model()
 # Load environment variables
 load_dotenv()
 api_key = os.getenv("MORALIS_API_KEY")
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def generate_challan(request, userType):
+    # Assuming you have a way to determine the correct land transfer based on the user and userType
+    try:
+        # Example logic to select the land transfer based on userType
+        if userType == "transferor":
+            land_transfer = LandTransfer.objects.filter(
+                transferor_user=request.user
+            ).latest("created_at")
+        elif userType == "transferee":
+            land_transfer = LandTransfer.objects.filter(
+                transferee_user=request.user
+            ).latest("created_at")
+        else:
+            return Response({"error": "Invalid user type provided."}, status=400)
+
+        transferor = land_transfer.transferor_user
+        transferee = land_transfer.transferee_user
+        land = land_transfer.land
+        tax_fee = TaxesFee.objects.filter(transfer=land_transfer).first()
+
+        buffer = io.BytesIO()
+        p = canvas.Canvas(buffer, pagesize=letter)
+        p.setTitle("Challan Form")
+
+        y_positions = [750, 730, 710, 690, 670]
+        person = transferor if userType == "transferor" else transferee
+
+        p.drawString(30, y_positions[0], f"Name: {person.name}")
+        p.drawString(30, y_positions[1], f"Tax Filer Status: {person.filer_status}")
+
+        p.drawString(220, y_positions[0], f"Tehsil: {land.tehsil}")
+        p.drawString(220, y_positions[1], f"Khasra No: {land.khasra_number}")
+        p.drawString(220, y_positions[2], f"Division: {land.division}")
+
+        p.drawString(410, y_positions[0], f"Transfer Type: {userType.capitalize()}")
+
+        p.drawString(
+            410,
+            y_positions[2],
+            f"Tax Amount Payable: {tax_fee.amount if tax_fee else 'N/A'}",
+        )
+
+        p.drawString(410, y_positions[4], "Bank Name: ")
+        p.drawString(410, y_positions[4], "Branch: ")
+        p.drawString(410, y_positions[4], "Date: ")
+
+        p.drawString(30, 100, "Signature: ")
+        p.drawString(30, 80, "Date: ")
+
+        p.drawString(
+            400, 30, f"Generated on {timezone.localtime().strftime('%d/%m/%Y, %H:%M')}"
+        )
+
+        p.showPage()
+        p.save()
+
+        buffer.seek(0)
+        filename = f"challan_{land_transfer.id}.pdf"
+        return FileResponse(buffer, as_attachment=True, filename=filename)
+    except LandTransfer.DoesNotExist:
+        return Response({"error": "Land transfer not found."}, status=404)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_marked_land(request, tehsil, khasra, division):
+    try:
+        land = Land.objects.get(tehsil=tehsil, khasra_number=khasra, division=division)
+        land_area = (
+            Land.objects.annotate(area=Area("land_geometry")).get(pk=land.pk).area
+        )
+
+        # Use the extent attribute instead of bounds
+        extent = land.land_geometry.extent
+        bottom_left = {"latitude": extent[1], "longitude": extent[0]}
+        top_right = {"latitude": extent[3], "longitude": extent[2]}
+
+        return JsonResponse(
+            {
+                "bottom_left": bottom_left,
+                "top_right": top_right,
+                "land_area": land_area.sq_m,  # or however you want to format the area
+            }
+        )
+    except ObjectDoesNotExist:
+        return JsonResponse({"error": "Land not found."}, status=404)
 
 
 @api_view(["GET"])

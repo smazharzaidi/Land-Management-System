@@ -263,7 +263,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   // Navigate to TaxChallanScreen
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => TaxChallanScreen()),
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            TaxChallanScreen(userType: 'transferor')),
                   );
                 } else if (transfer['status'] == 'pending') {
                   // Show the scheduled meeting dialog for pending status
@@ -305,7 +307,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => TaxChallanScreen()),
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          TaxChallanScreen(userType: 'transferee')),
                 );
               },
             ),

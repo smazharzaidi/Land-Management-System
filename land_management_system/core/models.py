@@ -12,6 +12,11 @@ class User(AbstractUser):
         max_length=50,
         choices=(("user", "User"), ("tehsildar", "Tehsildar"), ("pa", "PA")),
     )
+    filer_status = models.CharField(
+        max_length=50,
+        choices=(("filer", "Filer"), ("nonfiler", "Non-Filer")),
+        null=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

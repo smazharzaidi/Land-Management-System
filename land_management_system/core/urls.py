@@ -28,4 +28,14 @@ urlpatterns = [
     path("forgot_password/", forgot_password, name="forgot_password"),
     path("get_user_profile/", get_user_profile, name="get_user_profile"),
     path("update_user_profile/", update_user_profile, name="update_user_profile"),
+    path(
+        "get_marked_land/<str:tehsil>/<str:khasra>/<str:division>/",
+        get_marked_land,
+        name="get_marked_land",
+    ),
+    path(
+        "generate_challan/<str:userType>/",
+        generate_challan,
+        name="generate_challan",
+    ),
 ]

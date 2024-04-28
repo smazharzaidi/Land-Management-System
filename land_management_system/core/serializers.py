@@ -14,6 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
             "mobile_number",
             "cnic",
             "role",
+            "filer_status",
         )
 
 

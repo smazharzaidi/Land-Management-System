@@ -4,7 +4,7 @@ from .models import User, Land, LandTransfer, NFT, AuthToken, TaxesFee
 
 # Optional: Define custom admin classes to customize the admin interface
 class UserAdmin(admin.ModelAdmin):
-    list_display = ("username", "email", "name","wallet_address", "mobile_number", "cnic", "role")
+    list_display = ("username", "email", "name","wallet_address", "mobile_number", "cnic", "role", "filer_status")
     search_fields = ("username", "email", "name","wallet_address", "mobile_number", "cnic")
 
 
