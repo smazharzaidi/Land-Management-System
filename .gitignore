@@ -15,4 +15,5 @@ node_modules
 /coverage
 /coverage.json
 *.pyc
-__pycache__/
+__pycache__/"*.pyc" 
+"__pycache__/" 
