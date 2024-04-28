@@ -17,3 +17,4 @@ node_modules
 *.pyc
 __pycache__/"*.pyc" 
 "__pycache__/" 
+"land_management_system/settings/settings.py" 
