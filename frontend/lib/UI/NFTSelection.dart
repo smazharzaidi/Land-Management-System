@@ -105,7 +105,7 @@ class _NFTSelectionState extends State<NFTSelection> {
                           child: const Text('Proceed with this NFT'),
                         ),
                         // Include an action button or other information as needed
-                      ],
+                      ]
                     ),
                   ),
                 ),

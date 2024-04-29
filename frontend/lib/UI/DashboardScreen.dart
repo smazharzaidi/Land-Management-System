@@ -450,7 +450,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onPressed: () {
                 Navigator.of(context).pop();
               },
-            ),
+            )
           ],
         );
       },

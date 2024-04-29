@@ -20,7 +20,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController mobileNumberController = TextEditingController();
   final TextEditingController cnicController = TextEditingController();
-  bool isLoading = false; 
+  bool isLoading = false;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,21 +92,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
               right: 0,
               bottom: 20,
               child: Center(
-                child: TextButton(
-                  onPressed: () => Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const SignInScreen()),
-                  ),
-                  child: Text(
-                    "Already have an account? Sign In",
-                    style: GoogleFonts.lato(
-                      color: Colors.black,
-                      fontSize: 16,
-                    ),
+                  child: TextButton(
+                onPressed: () => Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SignInScreen()),
+                ),
+                child: Text(
+                  "Already have an account? Sign In",
+                  style: GoogleFonts.lato(
+                    color: Colors.black,
+                    fontSize: 16,
                   ),
                 ),
-              ),
+              )),
             ),
             if (isLoading)
               Positioned(

@@ -128,7 +128,7 @@ class _NFTListPageState extends State<NFTListPage> {
                   },
                   childCount: provider.nftList.length,
                 ),
-              ),
+              )
             ],
           );
         },

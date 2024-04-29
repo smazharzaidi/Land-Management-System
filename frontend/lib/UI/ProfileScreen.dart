@@ -80,7 +80,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         setState(() {
                           _isMobileReadOnly = false;
                         });
-                      },
+                      }
                     ),
                     SizedBox(height: 20),
                     ElevatedButton(
