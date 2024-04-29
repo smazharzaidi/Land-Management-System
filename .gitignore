@@ -2,6 +2,7 @@ land_management_system/db.sqlite3
 land_management_system/.env
 node_modules
 .env
+land_management_system/settings/settings.py
 
 # Hardhat files
 /cache
@@ -16,5 +17,4 @@ node_modules
 /coverage.json
 *.pyc
 __pycache__/"*.pyc" 
-"__pycache__/" 
-"land_management_system/settings/settings.py" 
+__pycache__/
