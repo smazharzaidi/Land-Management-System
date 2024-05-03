@@ -59,29 +59,40 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     buildTextField(passwordController, 'Password',
                         initiallyObscure: true),
                     SizedBox(height: 20),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal:
+                              90.0), // Ensures horizontal padding matches the SignIn button
+                      width: double
+                          .infinity, // Ensures the button stretches across the width
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor:
+                              Colors.black, // Match the SignIn button color
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                                30.0), // Same rounded corners as SignIn
+                          ),
+                          padding: EdgeInsets.symmetric(
+                              vertical: 15.0), // Consistent vertical padding
                         ),
-                      ),
-                      onPressed: () => handleRegistration(context),
-                      child: isLoading
-                          ? CircularProgressIndicator(
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            )
-                          : Text(
-                              'Sign Up',
-                              style: GoogleFonts.lato(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                        onPressed: () => handleRegistration(
+                            context), // Your existing registration function
+                        child: isLoading
+                            ? CircularProgressIndicator(
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              )
+                            : Text(
+                                'Sign Up',
+                                style: GoogleFonts.lato(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
+                      ),
                     ),
                   ],
                 ),

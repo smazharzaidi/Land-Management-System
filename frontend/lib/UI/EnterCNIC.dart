@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../Functionality/CNICInputFormatter.dart';
 import '../Functionality/CNICVerification.dart';
 import '../Functionality/LandTransferData.dart';
+import '../Functionality/SignInAuth.dart';
 import 'NFTSelection.dart';
 import '../Functionality/DashboardLogic.dart';
 
 class EnterCNIC extends StatefulWidget {
-  final String
-      transferType; // To handle different logic based on the transfer type
+  final String transferType;
   final LandTransferData landTransferData;
+  final AuthServiceLogin authService;
 
   const EnterCNIC({
     Key? key,
     required this.transferType,
     required this.landTransferData,
+    required this.authService,
   }) : super(key: key);
 
   @override
@@ -22,10 +25,61 @@ class EnterCNIC extends StatefulWidget {
 
 class _EnterCNICState extends State<EnterCNIC> {
   late DashboardLogic _logic;
+  final _cnicController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false; // State variable for managing loading state
+
   @override
   void initState() {
     super.initState();
-    _logic = DashboardLogic(); // Initialize DashboardLogic here
+    _logic = DashboardLogic();
+  }
+
+  Future<void> _submitCNIC() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true; // Set loading to true
+      });
+      final String transferType = _getTransferType(widget.transferType);
+      CNICVerification cnicVerification = CNICVerification(
+          context, _logic, widget.landTransferData, widget.authService);
+
+      bool isValid = await cnicVerification.verifyCNICAndNavigate(
+          _cnicController.text, transferType);
+      if (isValid) {
+        String? walletAddress = await _logic.fetchWalletAddress();
+        if (walletAddress != null) {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => NFTSelection(
+                        address: walletAddress,
+                        chain: 'sepolia',
+                        landTransferData: widget.landTransferData,
+                        authService: widget.authService,
+                      )));
+        } else {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text("Error"),
+                content: Text("Failed to fetch wallet address."),
+                actions: <Widget>[
+                  TextButton(
+                    child: Text("OK"),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      }
+      setState(() {
+        _isLoading = false; // Reset loading state after operation
+      });
+    }
   }
 
   String _getTransferType(String type) {
@@ -43,60 +97,19 @@ class _EnterCNICState extends State<EnterCNIC> {
     }
   }
 
-  final _cnicController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-
-  Future<void> _submitCNIC() async {
-    if (_formKey.currentState!.validate()) {
-      final String transferType = _getTransferType(widget.transferType);
-      CNICVerification cnicVerification =
-          CNICVerification(context, _logic, widget.landTransferData);
-
-      bool isValid = await cnicVerification.verifyCNICAndNavigate(
-          _cnicController.text, transferType);
-      if (isValid) {
-        String? walletAddress = await _logic.fetchWalletAddress();
-        if (walletAddress != null) {
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => NFTSelection(
-                        address: walletAddress,
-                        chain: 'sepolia',
-                        landTransferData: widget.landTransferData,
-                      )));
-        } else {
-          // Optionally, handle the case where wallet address fetch fails
-          // For example, show an error message
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text("Error"),
-                content: Text("Failed to fetch wallet address."),
-                actions: <Widget>[
-                  TextButton(
-                    child: Text("OK"),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              );
-            },
-          );
-        }
-      } else {
-        // Optionally, handle the case where CNIC verification fails
-        // For example, show an error message
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        title: Text('Enter CNIC for ${widget.transferType}'),
-        backgroundColor: Colors.green,
+        title: Text('Enter CNIC for ${widget.transferType}',
+            style: GoogleFonts.lato(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                fontSize: 20)),
+        backgroundColor: Colors.grey[200],
+        elevation: 0,
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -115,44 +128,52 @@ class _EnterCNICState extends State<EnterCNIC> {
                   controller: _cnicController,
                   decoration: InputDecoration(
                     labelText: 'CNIC Number',
+                    labelStyle: GoogleFonts.lato(),
                     hintText: 'e.g., 42101-2345678-9',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.credit_card, color: Colors.green),
-                    errorStyle: TextStyle(
-                      // Adjust the style here
-                      color: Colors.red, // Use any color for the error text
-                      fontSize: 10.0, // You can adjust the font size as needed
-                      height:
-                          1.2, // Increase line height for better readability
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
                     ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    prefixIcon: Icon(Icons.credit_card),
                   ),
                   keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    CNICInputFormatter()
-                  ], // Apply the CNIC formatter here
+                  inputFormatters: [CNICInputFormatter()],
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your CNIC number';
                     } else if (value.length != 15) {
-                      // Include the dashes in the count
                       return 'A CNIC number must be in the format: xxxxx-xxxxxxx-x';
                     }
                     return null;
                   },
                 ),
                 SizedBox(height: 20),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: EdgeInsets.symmetric(vertical: 12.0),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                  ),
-                  onPressed: _submitCNIC,
-                  child: Text(
-                    'Submit',
-                    style: TextStyle(fontSize: 18),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 90.0),
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30.0)),
+                        padding: EdgeInsets.symmetric(vertical: 15.0)),
+                    onPressed: _submitCNIC,
+                    child: _isLoading
+                        ? CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          )
+                        : Text(
+                            'Submit',
+                            style: GoogleFonts.lato(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
               ],

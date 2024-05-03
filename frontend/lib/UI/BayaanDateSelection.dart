@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../Functionality/LandTransferData.dart';
 import '../Functionality/BayaanSchedule.dart'; // Ensure this import is correct
 import '../Functionality/config.dart';
@@ -6,7 +7,10 @@ import '../Functionality/SignInAuth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'DashboardScreen.dart';
+
 class BayaanDateSelection extends StatefulWidget {
+  final AuthServiceLogin authService;
   final LandTransferData landTransferData;
   final List<String> scheduledDates;
 
@@ -14,6 +18,7 @@ class BayaanDateSelection extends StatefulWidget {
     Key? key,
     required this.landTransferData,
     required this.scheduledDates,
+    required this.authService,
   }) : super(key: key);
 
   @override
@@ -21,19 +26,18 @@ class BayaanDateSelection extends StatefulWidget {
 }
 
 class _BayaanDateSelectionState extends State<BayaanDateSelection> {
-  late BayaanSchedule schedule; // Declare schedule here
+  late BayaanSchedule schedule;
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
+  bool isLoading = false; // State to manage loading indicator
 
   @override
   void initState() {
     super.initState();
-    // Convert scheduledDates from String to DateTime
-    List<DateTime> convertedScheduledDates = widget.scheduledDates
-        .map((dateStr) => DateTime.parse(dateStr))
-        .toList();
-    // Initialize schedule with the converted dates
-    schedule = BayaanSchedule(scheduledDates: convertedScheduledDates);
+    schedule = BayaanSchedule(
+        scheduledDates: widget.scheduledDates
+            .map((dateStr) => DateTime.parse(dateStr))
+            .toList());
   }
 
   void _showAvailableDates(BuildContext context) async {
@@ -121,13 +125,17 @@ class _BayaanDateSelectionState extends State<BayaanDateSelection> {
   }
 
   Future<void> confirmBayaan() async {
-    widget.landTransferData.printDetails();
+    if (selectedDate == null || selectedTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Please select both date and time.")));
+      return;
+    }
+    setState(() => isLoading = true);
+
     final storage = SecureStorageService();
     final String? token = await storage.getToken();
-    final Uri apiUri = Uri.parse(
-        "${AppConfig.baseURL}create_land_transfer/"); // Adjust the URL based on your actual API endpoint
-    print("Making request to: $apiUri");
-    print("With headers: Authorization: Bearer $token");
+    final Uri apiUri = Uri.parse("${AppConfig.baseURL}create_land_transfer/");
+
     DateTime scheduledDatetime = DateTime(
       selectedDate!.year,
       selectedDate!.month,
@@ -149,56 +157,129 @@ class _BayaanDateSelectionState extends State<BayaanDateSelection> {
         'landTehsil': widget.landTransferData.landTehsil,
         'landKhasra': widget.landTransferData.landKhasra,
         'landDivision': widget.landTransferData.landDivision,
-        'scheduledDatetime': scheduledDatetime
-            .toIso8601String(), // Convert DateTime to ISO 8601 string
+        'scheduledDatetime': scheduledDatetime.toIso8601String(),
       }),
     );
 
+    setState(() => isLoading = false);
+
     if (response.statusCode == 200) {
-      // Handle success
-      print("Land transfer successfully scheduled.");
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text("Success"),
+          content: Text("Land transfer is initiated and Bayaan is scheduled."),
+          actions: <Widget>[
+            TextButton(
+              child: Text("OK"),
+              onPressed: () {
+                Navigator.of(ctx).pop(); // Close the dialog
+                Navigator.of(context).pushReplacement(MaterialPageRoute(
+                    builder: (context) => DashboardScreen(
+                        authService:
+                            widget.authService))); // Pass the authService here
+              },
+            ),
+          ],
+        ),
+      );
     } else {
-      // Handle error
-      print("Failed to schedule land transfer.");
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text("Error"),
+          content: Text("Failed to schedule land transfer."),
+          actions: <Widget>[
+            TextButton(
+              child: Text("OK"),
+              onPressed: () => Navigator.of(ctx).pop(),
+            ),
+          ],
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        title: Text('Select Bayaan Date and Time'),
-        backgroundColor: Colors.green,
+        title: Text('Select Bayaan Date and Time',
+            style: GoogleFonts.lato(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                fontSize: 20)),
+        backgroundColor: Colors.grey[200],
+        elevation: 0,
+        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ElevatedButton(
-              onPressed: () => _showAvailableDates(context),
-              child: Text(selectedDate == null
-                  ? 'Select Date'
-                  : 'Date: ${selectedDate!.toIso8601String().substring(0, 10)}'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+            TextFormField(
+              readOnly: true,
+              decoration: InputDecoration(
+                labelText: 'Date',
+                suffixIcon: Icon(Icons.calendar_today),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.white,
               ),
+              controller: TextEditingController(
+                  text: selectedDate == null
+                      ? 'Tap to select date'
+                      : selectedDate.toString().substring(0, 10)),
+              onTap: () => _showAvailableDates(context),
             ),
             SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => _showAvailableTimeSlots(context),
-              child: Text(selectedTime == null
-                  ? 'Select Time Slot'
-                  : 'Time: ${selectedTime!.format(context)}'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+            TextFormField(
+              readOnly: true,
+              decoration: InputDecoration(
+                labelText: 'Time',
+                suffixIcon: Icon(Icons.access_time),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.white,
               ),
+              controller: TextEditingController(
+                  text: selectedTime == null
+                      ? 'Tap to select time'
+                      : selectedTime!.format(context)),
+              onTap: () => _showAvailableTimeSlots(context),
             ),
-            ElevatedButton(
-              onPressed: confirmBayaan,
-              child: Text('Confirm'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+            SizedBox(height: 20),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 90.0),
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.0)),
+                  padding: EdgeInsets.symmetric(vertical: 15.0),
+                ),
+                onPressed: isLoading
+                    ? null
+                    : confirmBayaan, // Disable the button when loading
+                child: isLoading
+                    ? CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      )
+                    : Text(
+                        'Confirm',
+                        style: GoogleFonts.lato(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold),
+                      ),
               ),
             ),
           ],

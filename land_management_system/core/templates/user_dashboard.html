@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>User Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}" />
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <h1>Welcome to Your Dashboard, {{ request.user.username }}</h1>
+      <h2>Your Lands</h2>
+      {% if lands %}
+        <table>
+          <thead>
+            <tr>
+              <th>Tehsil</th>
+              <th>Khasra Number</th>
+              <th>Division</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for land in lands %}
+              <tr>
+                <td>{{ land.land.tehsil }}</td>
+                <td>{{ land.land.khasra_number }}</td>
+                <td>{{ land.land.division }}</td>
+                <td>
+                  <button>Transfer</button>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>No lands available where taxes are fully paid.</p>
+      {% endif %}
+    </div>
+  </body>
+</html>

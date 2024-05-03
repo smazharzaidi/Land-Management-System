@@ -28,6 +28,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   late DashboardLogic _logic;
   List<dynamic>? pendingTransfers = null;
   List<dynamic>? approvedTransfers = null;
+  Map<String, bool> _actionInProgress = {};
 
   @override
   void initState() {
@@ -187,7 +188,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                                 foregroundColor: Colors.white,
-                                backgroundColor: Colors.green,
+                                backgroundColor: Colors.black,
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(30.0)),
                                 padding: EdgeInsets.symmetric(vertical: 15.0)),
@@ -254,26 +255,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
             title: Text(transfer['land__khasra_number']),
             subtitle: Text(
                 'Tehsil: ${transfer['land__tehsil']}\nDivision: ${transfer['land__division']}'),
-            trailing: IconButton(
-              icon: Icon(Icons.info_outline, color: Colors.blue),
-              onPressed: () {
-                // Check if status is "approved" and transfer_date is null (or you can adapt this condition as necessary)
-                if (transfer['status'] == 'approved' &&
-                    transfer['transfer_date'] == null) {
-                  // Navigate to TaxChallanScreen
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            TaxChallanScreen(userType: 'transferor')),
-                  );
-                } else if (transfer['status'] == 'pending') {
-                  // Show the scheduled meeting dialog for pending status
-                  _showScheduledMeetingDialog(context, transfer);
-                }
-                // You can add more conditions here for other statuses or actions
-              },
-            ),
+            trailing: _actionInProgress[transfer['land__khasra_number']] == true
+                ? CircularProgressIndicator()
+                : IconButton(
+                    icon: Icon(Icons.info_outline, color: Colors.blue),
+                    onPressed: () {
+                      // Check if status is "approved" and transfer_date is null (or you can adapt this condition as necessary)
+                      if (transfer['status'] == 'approved' &&
+                          transfer['transfer_date'] == null) {
+                        // Navigate to TaxChallanScreen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TaxChallanScreen(
+                              userType: 'transferor',
+                              khasraNumber: transfer['land__khasra_number'],
+                              tehsil: transfer['land__tehsil'],
+                              division: transfer['land__division'],
+                            ),
+                          ),
+                        );
+                      } else if (transfer['status'] == 'pending') {
+                        // Show the scheduled meeting dialog for pending status
+                        _showScheduledMeetingDialog(context, transfer);
+                      }
+                      // You can add more conditions here for other statuses or actions
+                    },
+                  ),
           ),
         );
       },
@@ -302,17 +310,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
             title: Text(transfer['land__khasra_number']),
             subtitle: Text(
                 'Tehsil: ${transfer['land__tehsil']}\nDivision: ${transfer['land__division']}'),
-            trailing: IconButton(
-              icon: Icon(Icons.event_available, color: Colors.blue),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          TaxChallanScreen(userType: 'transferee')),
-                );
-              },
-            ),
+            trailing: _actionInProgress[transfer['land__khasra_number']] == true
+                ? CircularProgressIndicator()
+                : IconButton(
+                    icon: Icon(Icons.info_outline, color: Colors.blue),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TaxChallanScreen(
+                            userType: 'transferee',
+                            khasraNumber: transfer['land__khasra_number'],
+                            tehsil: transfer['land__tehsil'],
+                            division: transfer['land__division'],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ),
         );
       },
@@ -354,7 +369,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: <Widget>[
                 ListTile(
                   leading:
-                      const Icon(Icons.monetization_on, color: Colors.green),
+                      const Icon(Icons.monetization_on, color: Colors.black),
                   title: const Text('Sell (Beh)'),
                   onTap: () {
                     Navigator.of(context).pop(); // Close the dialog first
@@ -364,7 +379,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 ListTile(
                   leading:
-                      const Icon(Icons.family_restroom, color: Colors.green),
+                      const Icon(Icons.family_restroom, color: Colors.black),
                   title: const Text('Death Transfer (Wirasat)'),
                   onTap: () {
                     Navigator.of(context).pop(); // Close the dialog first
@@ -373,7 +388,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.sync_alt, color: Colors.green),
+                  leading: const Icon(Icons.sync_alt, color: Colors.black),
                   title: const Text('In-Life Transfer (Tamleeq)'),
                   onTap: () {
                     Navigator.of(context).pop(); // Close the dialog first
@@ -382,7 +397,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.card_giftcard, color: Colors.green),
+                  leading: const Icon(Icons.card_giftcard, color: Colors.black),
                   title: const Text('Gift (Hiba)'),
                   onTap: () {
                     Navigator.of(context).pop(); // Close the dialog first
@@ -433,12 +448,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   },
                 ),
                 W3MNetworkSelectButton(service: _logic.w3mService),
-                FloatingActionButton(
-                  backgroundColor: Colors.green,
-                  onPressed: _logic.requestWalletAddresses,
-                  child: const Text(
-                    'Link Permenantly',
-                    style: const TextStyle(color: Colors.white),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 20.0), // Reduce or remove to expand button
+                  child: ButtonBar(
+                    alignment: MainAxisAlignment.center,
+                    buttonPadding: EdgeInsets
+                        .zero, // Removes additional padding around the button
+                    children: <Widget>[
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30.0)),
+                          padding: EdgeInsets.symmetric(vertical: 15.0),
+                        ),
+                        onPressed: _logic.requestWalletAddresses,
+                        child: const Text(
+                          'Link Permanently',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -450,7 +486,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onPressed: () {
                 Navigator.of(context).pop();
               },
-            )
+            ),
           ],
         );
       },
@@ -492,6 +528,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           transferType: transferType,
           landTransferData:
               AuthServiceLogin.currentLandTransferData!, // Pass the instance
+          authService: widget.authService,
         ),
       ),
     );

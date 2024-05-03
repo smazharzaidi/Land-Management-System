@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flip_card/flip_card.dart';
 import '../Functionality/NFTListProvider.dart';
 
@@ -21,7 +22,6 @@ class _NFTListPageState extends State<NFTListPage> {
   @override
   void initState() {
     super.initState();
-    // Load NFTs when the widget is inserted into the tree
     final provider = Provider.of<NFTListProvider>(context, listen: false);
     provider.loadNFTList(widget.address, widget.chain);
   }
@@ -29,110 +29,140 @@ class _NFTListPageState extends State<NFTListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[200],
+      appBar: AppBar(
+        backgroundColor: Colors.grey[200],
+        elevation: 0,
+        centerTitle: true,
+        title: Text('NFT List',
+            style: GoogleFonts.lato(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                fontSize: 24)),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: Consumer<NFTListProvider>(
         builder: (context, provider, child) {
-          return CustomScrollView(
-            slivers: <Widget>[
-              SliverAppBar(
-                expandedHeight: 150.0,
-                pinned: true,
-                flexibleSpace: FlexibleSpaceBar(
-                  title: const Text('NFT List',
-                      style: TextStyle(color: Colors.white)),
-                  background: Image.network(
-                    'https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Field_in_K%C3%A4rk%C3%B6l%C3%A4.jpg/275px-Field_in_K%C3%A4rk%C3%B6l%C3%A4.jpg',
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ),
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    var nftData = provider.nftList[index];
-                    var normalizedMetadata = nftData['normalized_metadata'];
-                    var imageUrl = 'https://ipfs.io/ipfs/' +
-                        normalizedMetadata['image'].substring(7);
-                    var description = normalizedMetadata['description'] ??
-                        'No description available';
-                    var cnic = normalizedMetadata['attributes'].firstWhere(
-                            (attr) => attr['trait_type'] == 'CNIC',
-                            orElse: () => null)?['value'] ??
-                        'Not provided';
-                    var khasra = normalizedMetadata['attributes'].firstWhere(
-                            (attr) => attr['trait_type'] == 'Khasra Number',
-                            orElse: () => null)?['value'] ??
-                        'Not provided';
-                    var division = normalizedMetadata['attributes'].firstWhere(
-                            (attr) => attr['trait_type'] == 'Division',
-                            orElse: () => null)?['value'] ??
-                        'Not provided';
+          if (provider.nftList.isEmpty) {
+            return Center(
+                child: Text('No NFTs found', style: GoogleFonts.lato()));
+          }
+          return ListView.builder(
+            itemCount: provider.nftList.length,
+            itemBuilder: (context, index) {
+              var nftData = provider.nftList[index];
+              var normalizedMetadata = nftData['normalized_metadata'];
+              var imageUrl = 'https://gateway.pinata.cloud/ipfs/' +
+                  normalizedMetadata['image'].substring(7);
+              var description = normalizedMetadata['description'] ??
+                  'No description available';
 
-                    // Determine a consistent card height
-                    final double cardHeight =
-                        300.0; // Adjust based on your content
-
-                    return FlipCard(
-                      front: Card(
-                        child: SizedBox(
-                          height: cardHeight,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                nftData['name'] ?? 'Unnamed NFT',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              Expanded(
-                                child: Image.network(
-                                  imageUrl,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              Text(description),
-                            ],
-                          ),
-                        ),
-                      ),
-                      back: Card(
-                        child: SizedBox(
-                          height: cardHeight,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Details',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16),
-                                ),
-                                Text('CNIC: $cnic',
-                                    style: TextStyle(fontSize: 14)),
-                                Text('Khasra Number: $khasra',
-                                    style: TextStyle(fontSize: 14)),
-                                Text('Division: $division',
-                                    style: TextStyle(fontSize: 14)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                  childCount: provider.nftList.length,
-                ),
-              )
-            ],
+              return FlipCard(
+                direction: FlipDirection.HORIZONTAL,
+                front: buildCardFront(nftData['name'], imageUrl, description),
+                back: buildCardBack(normalizedMetadata),
+              );
+            },
           );
         },
       ),
+    );
+  }
+
+  Widget buildCardFront(String? name, String imageUrl, String description) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      elevation: 5,
+      child: SizedBox(
+        height: 275, // Ensure this is enough to hold the content nicely
+        child: Column(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+              child: Image.network(imageUrl,
+                  fit: BoxFit.cover, height: 200, width: double.infinity),
+            ),
+            ListTile(
+              title: Text(name ?? 'Unnamed NFT',
+                  style: GoogleFonts.lato(fontWeight: FontWeight.bold)),
+              subtitle: Text(description,
+                  style: GoogleFonts.lato(), overflow: TextOverflow.ellipsis),
+              trailing: IconButton(
+                icon: Icon(Icons.more_horiz),
+                onPressed: () =>
+                    _showDetailsDialog(context, imageUrl, description),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildCardBack(Map<String, dynamic> normalizedMetadata) {
+    var cnic = normalizedMetadata['attributes'].firstWhere(
+            (attr) => attr['trait_type'] == 'CNIC',
+            orElse: () => null)?['value'] ??
+        'Not provided';
+    var khasra = normalizedMetadata['attributes'].firstWhere(
+            (attr) => attr['trait_type'] == 'Khasra Number',
+            orElse: () => null)?['value'] ??
+        'Not provided';
+    var division = normalizedMetadata['attributes'].firstWhere(
+            (attr) => attr['trait_type'] == 'Division',
+            orElse: () => null)?['value'] ??
+        'Not provided';
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      elevation: 5,
+      child: SizedBox(
+        height: 275, // Same height as the front
+        child: Padding(
+          padding: EdgeInsets.all(10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Details',
+                  style: GoogleFonts.lato(
+                      fontWeight: FontWeight.bold, fontSize: 18)),
+              Text('CNIC: $cnic', style: GoogleFonts.lato(fontSize: 14)),
+              Text('Khasra Number: $khasra',
+                  style: GoogleFonts.lato(fontSize: 14)),
+              Text('Division: $division',
+                  style: GoogleFonts.lato(fontSize: 14)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDetailsDialog(
+      BuildContext context, String imageUrl, String description) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.network(imageUrl, fit: BoxFit.cover),
+              SizedBox(height: 10),
+              Text(description, style: GoogleFonts.lato()),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: Text('Close', style: GoogleFonts.lato()),
+              onPressed: () => Navigator.of(context).pop(),
+            )
+          ],
+        );
+      },
     );
   }
 }

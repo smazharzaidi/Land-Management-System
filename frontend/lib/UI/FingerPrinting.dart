@@ -1,15 +1,17 @@
-// ignore_for_file: file_names
-
 import 'package:flutter/material.dart';
-
+import 'package:google_fonts/google_fonts.dart';
 import '../Functionality/LandTransferData.dart';
 import 'MarkedLand.dart';
+import '../Functionality/SignInAuth.dart'; // Assuming AuthServiceLogin is defined here
 
 class FingerPrinting extends StatelessWidget {
   final LandTransferData landTransferData;
+  final AuthServiceLogin authService;
+
   const FingerPrinting({
     Key? key,
     required this.landTransferData,
+    required this.authService,
   }) : super(key: key);
 
   @override
@@ -17,62 +19,83 @@ class FingerPrinting extends StatelessWidget {
     TextEditingController receiptNumberController = TextEditingController();
 
     return Scaffold(
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        title: const Text(
-          'Fingerprint Verification',
-          style: TextStyle(color: Colors.white),
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
-        backgroundColor: Colors.green,
+        title: Text('Fingerprint Verification',
+            style: GoogleFonts.lato(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                fontSize: 20)),
+        iconTheme: IconThemeData(color: Colors.black),
+        backgroundColor: Colors.grey[200],
+        elevation: 0,
+        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const Text(
+            Text(
               'Fingerprint Verification Instructions:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style:
+                  GoogleFonts.lato(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 10),
-            const Text(
+            SizedBox(height: 10),
+            Text(
               '1. Both the transferer and transferee should visit a NADRA e-Sahulat center.',
-              style: TextStyle(fontSize: 16),
+              style: GoogleFonts.lato(fontSize: 16),
             ),
-            const Text(
+            Text(
               '2. Get your fingerprints verified.',
-              style: TextStyle(fontSize: 16),
+              style: GoogleFonts.lato(fontSize: 16),
             ),
-            const Text(
+            Text(
               '3. Obtain a receipt number after verification.',
-              style: TextStyle(fontSize: 16),
+              style: GoogleFonts.lato(fontSize: 16),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             TextField(
               controller: receiptNumberController,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none),
+                filled: true,
+                fillColor: Colors.white,
                 labelText: 'Receipt Number',
                 hintText: 'Enter your receipt number here',
+                labelStyle: GoogleFonts.lato(),
               ),
             ),
-            const SizedBox(height: 20),
-            Center(
+            SizedBox(height: 20),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 90.0),
+              width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                ),
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.0)),
+                    padding: EdgeInsets.symmetric(vertical: 15.0)),
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          MarkedLand(landTransferData: landTransferData),
+                      builder: (context) => MarkedLand(
+                        landTransferData:
+                            landTransferData, // Use the direct variable
+                        authService: authService, // Use the direct variable
+                      ),
                     ),
                   );
                 },
-                child:
-                    const Text('Next', style: TextStyle(color: Colors.white)),
+                child: Text('Next',
+                    style: GoogleFonts.lato(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold)),
               ),
             ),
           ],

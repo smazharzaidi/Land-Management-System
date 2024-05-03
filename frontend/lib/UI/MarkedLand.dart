@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
-import '../Functionality/LandTransferData.dart';
-import 'BayaanDateSelection.dart';
-import '../Functionality/config.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import '../Functionality/SignInAuth.dart'; // Assuming this is where you've implemented token storage
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+import '../Functionality/LandTransferData.dart';
 import '../Functionality/LandService.dart';
+import '../Functionality/SignInAuth.dart'; // Assuming this is where you've implemented token storage
+import '../Functionality/config.dart';
+import 'BayaanDateSelection.dart';
 
 class MarkedLand extends StatefulWidget {
+  final AuthServiceLogin authService;
   final LandTransferData landTransferData;
 
-  const MarkedLand({Key? key, required this.landTransferData})
+  const MarkedLand(
+      {Key? key, required this.authService, required this.landTransferData})
       : super(key: key);
 
   @override
@@ -46,8 +50,7 @@ class _MarkedLandState extends State<MarkedLand> {
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
-      List<String> datetimes = List<String>.from(data['scheduled_datetimes']);
-      return datetimes;
+      return List<String>.from(data['scheduled_datetimes']);
     } else {
       throw Exception('Failed to load scheduled datetimes');
     }
@@ -60,10 +63,7 @@ class _MarkedLandState extends State<MarkedLand> {
       widget.landTransferData.landDivision,
     );
 
-    // Assuming landDetails returns a map with latitude and longitude pairs
-    // for bottom-left and top-right corners of the marked land area.
     if (landDetails != null && landDetails.isNotEmpty) {
-      // Parse the details to get the LatLng for bounds
       var bottomLeft = LatLng(
         landDetails['bottom_left']['latitude'],
         landDetails['bottom_left']['longitude'],
@@ -72,8 +72,6 @@ class _MarkedLandState extends State<MarkedLand> {
         landDetails['top_right']['latitude'],
         landDetails['top_right']['longitude'],
       );
-
-      // Create and return the bounds
       return LatLngBounds(bottomLeft, topRight);
     } else {
       throw Exception('Marked land details are not available');
@@ -83,9 +81,19 @@ class _MarkedLandState extends State<MarkedLand> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        title: Text('Marked Land'),
-        backgroundColor: Colors.green,
+        title: Text(
+          'Marked Land',
+          style: GoogleFonts.lato(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        backgroundColor: Colors.grey[200],
+        elevation: 0,
+        centerTitle: true,
       ),
       body: FutureBuilder<LatLngBounds>(
         future: markedLandDetails,
@@ -100,14 +108,12 @@ class _MarkedLandState extends State<MarkedLand> {
             return Center(child: Text('No data found for marked land.'));
           }
 
-          // Once data is fetched, use FlutterMap to display it
-          LatLngBounds bounds = snapshot.data!;
           return Column(
             children: [
               Expanded(
                 child: FlutterMap(
                   options: MapOptions(
-                    bounds: bounds,
+                    bounds: snapshot.data!,
                     boundsOptions:
                         FitBoundsOptions(padding: EdgeInsets.all(8.0)),
                   ),
@@ -118,29 +124,41 @@ class _MarkedLandState extends State<MarkedLand> {
                       subdomains: ['a', 'b', 'c'],
                       userAgentPackageName: 'com.example.app',
                     ),
-                    // Add your additional layers here
+                    // Add your additional map layers or markers here
                   ],
                 ),
               ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                ),
-                onPressed: () async {
-                  List<String> scheduledDatetimes =
-                      await fetchScheduledDatetimes();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => BayaanDateSelection(
-                        landTransferData: widget.landTransferData,
-                        scheduledDates:
-                            scheduledDatetimes, // Now passing datetimes
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 90.0),
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30.0)),
+                      padding: EdgeInsets.symmetric(vertical: 15.0)),
+                  onPressed: () async {
+                    List<String> scheduledDatetimes =
+                        await fetchScheduledDatetimes();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BayaanDateSelection(
+                          authService:
+                            widget.authService,
+                          landTransferData: widget.landTransferData,
+                          scheduledDates: scheduledDatetimes,
+                        ),
                       ),
-                    ),
-                  );
-                },
-                child: Text('Next', style: TextStyle(color: Colors.white)),
+                    );
+                  },
+                  child: Text('Next',
+                      style: GoogleFonts.lato(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold)),
+                ),
               ),
             ],
           );

@@ -1,0 +1,128 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{% static 'website/img/favicon.png' %}" rel="icon">
+    <link rel="stylesheet" href="{% static 'website/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
+    <link
+        href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Raleway:300,300i,400,400i,500,500i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'website/vendor/fontawesome-free/css/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'website/vendor/animate.css/animate.min.css' %}">
+    <link rel="stylesheet" href="{% static 'website/vendor/bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'website/vendor/bootstrap-icons/bootstrap-icons.css' %}">
+    <link rel="stylesheet" href="{% static 'website/vendor/boxicons/css/boxicons.min.css' %}">
+    <link rel="stylesheet" href="{% static 'website/vendor/glightbox/css/glightbox.min.css' %}">
+    <link rel="stylesheet" href="{% static 'website/vendor/remixicon/remixicon.css' %}">
+    <link rel="stylesheet" href="{% static 'website/vendor/swiper/swiper-bundle.min.css' %}">
+    <link rel="stylesheet" href="{% static 'website/css/admin_styles.css' %}">
+    <link rel="stylesheet" href="{% static 'website/css/datatables.css' %}">
+</head>
+
+<body>
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div class="primary-bg shadow border-end " id="sidebar-wrapper">
+            <div class="text-center primary-text bg-blue-color fs-4 fw-semibold text-uppercase border-bottom">
+                <h2 class="text-orange pt-3 pb-2">Land MS</h2>
+            </div>
+            <ul class="navbar-nav sidebar_list">
+                <li class="nav-item px-2 py-0 mt-1">
+                    <a href="{% url 'teh_dashboard' %}" class="text-decoration-none nav-link px-2 active">
+                        <span><i class="fas fa-tachometer-alt me-2"></i></span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item px-2 py-0 mt-1">
+                    <a href="{% url 'logout' %}" class="text-decoration-none nav-link px-2">
+                        <span><i class="fas fa-power-off me-2"></i></span>
+                        <span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <!-- /#sidebar-wrapper -->
+        <!-- Page Content -->
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <div class="container-fluid px-4">
+                <div class="row justify-content-center g-3">
+                    <div class="col-12">
+                        <div class="card shadow-lg">
+                            <div class="card-body">
+                                <h3>Transfer Details</h3>
+                                <p><strong>Transfer Type:</strong> {{ transfer.transfer_type }}</p>
+                                <p><strong>Transferor CNIC:</strong> {{ transfer.transferor_user.cnic }}</p>
+                                <p><strong>Transferee CNIC:</strong> {{ transfer.transferee_user.cnic }}</p>
+                                <p><strong>Transferor Filer Status:</strong> {{ transfer.transferor_user.filer_status }}
+                                </p>
+                                <p><strong>Transferee Filer Status:</strong> {{ transfer.transferee_user.filer_status }}
+                                </p>
+                                <form method="POST" action="{% url 'teh_store' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="land_id" value="{{ transfer.id }}">
+                                    <input type="hidden" name="transfer_type" value="{{ transfer.transfer_type }}">
+                                    <div class="mb-3">
+                                        <label for="amount" class="form-label">Amount</label>
+                                        <input type="number" id="amount" name="amount" class="form-control" required>
+                                    </div>
+                                    <div id="taxInfo">
+                                        <p>Transferor Tax: <span id="transferorTax">PKR 0</span></p>
+                                        <p>Transferee Tax: <span id="transfereeTax">PKR 0</span></p>
+                                    </div>
+                                    <div class="text-center">
+                                        <button type="submit" class="btn btn-info">Submit Details</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /#page-content-wrapper -->
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script src="{% static 'website/js/app.js' %}"></script>
+    <script src="{% static 'website/js/datatables.js' %}"></script>
+    <script src="{% static 'website/js/jquery.multiselect.js' %}"></script>
+    <script src="{% static 'website/js/bootstrap.bundle.min.js' %}"></script>
+    <script>
+        document.getElementById('amount').addEventListener('input', function () {
+            const amount = this.value;
+            const transferType = "{{ transfer.transfer_type }}";  // Ensure this is passed to the script
+            const filerStatusTransferor = "{{ transfer.transferor_user.filer_status }}";
+            const filerStatusTransferee = "{{ transfer.transferee_user.filer_status }}";
+
+            if (amount && transferType && filerStatusTransferor && filerStatusTransferee) {
+                fetch('{% url "calculate_tax" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        amount: amount,
+                        transferType: transferType,
+                        filerStatusTransferor: filerStatusTransferor,
+                        filerStatusTransferee: filerStatusTransferee
+                    })
+                }).then(response => response.json())
+                    .then(data => {
+                        document.getElementById('transferorTax').textContent = `PKR ${data.taxTransferor.toFixed(2)}`;
+                        document.getElementById('transfereeTax').textContent = `PKR ${data.taxTransferee.toFixed(2)}`;
+                    }).catch(error => console.error('Error:', error));
+            }
+        });
+
+    </script>
+</body>
+
+</html>

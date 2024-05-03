@@ -35,7 +35,6 @@ urlpatterns = [
         r"^accounts/login/$",
         RedirectView.as_view(pattern_name="login", permanent=False),
     ),
-    path("tehsildar/", include("website.urls")),
 ]
 
 

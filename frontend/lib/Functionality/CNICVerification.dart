@@ -9,12 +9,14 @@ import 'config.dart';
 import 'LandTransferData.dart';
 
 class CNICVerification {
+  final AuthServiceLogin authService;
   final Uri baseURI = Uri.parse("${AppConfig.baseURL}");
   late DashboardLogic _logic;
   final BuildContext context;
   SecureStorageService storage = SecureStorageService();
   final LandTransferData landTransferData;
-  CNICVerification(this.context, this._logic, this.landTransferData);
+  CNICVerification(
+      this.context, this._logic, this.landTransferData, this.authService);
 
   Future<bool> verifyCNICAndNavigate(String cnic, String transferType) async {
     try {
@@ -54,6 +56,7 @@ class CNICVerification {
                         address: walletAddress,
                         chain: 'sepolia',
                         landTransferData: landTransferData,
+                        authService: authService,
                       )));
           return true;
         } else {

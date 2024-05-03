@@ -1,7 +1,7 @@
 import datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, FileResponse
-from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
@@ -26,7 +26,7 @@ from django.contrib.auth.decorators import login_required
 from rest_framework_simplejwt.authentication import JWTAuthentication
 import logging
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Q, Exists, OuterRef
 from django.core.mail import send_mail
 from django.conf import settings
 from allauth.account.forms import ResetPasswordForm
@@ -38,6 +38,10 @@ import io
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
+# WEBSITE IMPORTS
+from django.template.loader import render_to_string
+from decimal import Decimal
+from django.views.decorators.http import require_POST
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -45,71 +49,6 @@ User = get_user_model()
 # Load environment variables
 load_dotenv()
 api_key = os.getenv("MORALIS_API_KEY")
-
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def generate_challan(request, userType):
-    # Assuming you have a way to determine the correct land transfer based on the user and userType
-    try:
-        # Example logic to select the land transfer based on userType
-        if userType == "transferor":
-            land_transfer = LandTransfer.objects.filter(
-                transferor_user=request.user
-            ).latest("created_at")
-        elif userType == "transferee":
-            land_transfer = LandTransfer.objects.filter(
-                transferee_user=request.user
-            ).latest("created_at")
-        else:
-            return Response({"error": "Invalid user type provided."}, status=400)
-
-        transferor = land_transfer.transferor_user
-        transferee = land_transfer.transferee_user
-        land = land_transfer.land
-        tax_fee = TaxesFee.objects.filter(transfer=land_transfer).first()
-
-        buffer = io.BytesIO()
-        p = canvas.Canvas(buffer, pagesize=letter)
-        p.setTitle("Challan Form")
-
-        y_positions = [750, 730, 710, 690, 670]
-        person = transferor if userType == "transferor" else transferee
-
-        p.drawString(30, y_positions[0], f"Name: {person.name}")
-        p.drawString(30, y_positions[1], f"Tax Filer Status: {person.filer_status}")
-
-        p.drawString(220, y_positions[0], f"Tehsil: {land.tehsil}")
-        p.drawString(220, y_positions[1], f"Khasra No: {land.khasra_number}")
-        p.drawString(220, y_positions[2], f"Division: {land.division}")
-
-        p.drawString(410, y_positions[0], f"Transfer Type: {userType.capitalize()}")
-
-        p.drawString(
-            410,
-            y_positions[2],
-            f"Tax Amount Payable: {tax_fee.amount if tax_fee else 'N/A'}",
-        )
-
-        p.drawString(410, y_positions[4], "Bank Name: ")
-        p.drawString(410, y_positions[4], "Branch: ")
-        p.drawString(410, y_positions[4], "Date: ")
-
-        p.drawString(30, 100, "Signature: ")
-        p.drawString(30, 80, "Date: ")
-
-        p.drawString(
-            400, 30, f"Generated on {timezone.localtime().strftime('%d/%m/%Y, %H:%M')}"
-        )
-
-        p.showPage()
-        p.save()
-
-        buffer.seek(0)
-        filename = f"challan_{land_transfer.id}.pdf"
-        return FileResponse(buffer, as_attachment=True, filename=filename)
-    except LandTransfer.DoesNotExist:
-        return Response({"error": "Land transfer not found."}, status=404)
 
 
 @api_view(["GET"])
@@ -135,6 +74,43 @@ def get_marked_land(request, tehsil, khasra, division):
         )
     except ObjectDoesNotExist:
         return JsonResponse({"error": "Land not found."}, status=404)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_challan_details(request, khasra_number, tehsil, division, user_type):
+    try:
+        land_transfer = LandTransfer.objects.get(
+            land__khasra_number=khasra_number,
+            land__tehsil=tehsil,
+            land__division=division,
+        )
+        user = (
+            land_transfer.transferor_user
+            if user_type == "transferor"
+            else land_transfer.transferee_user
+        )
+
+        # Ensure tax_type matches the user_type
+        taxes_fee = TaxesFee.objects.get(
+            transfer=land_transfer,
+            tax_type=user_type,  # This assumes tax_type field exactly matches "transferor" or "transferee"
+        )
+
+        user_details = {
+            "name": user.name,
+            "filer_status": user.filer_status,
+            "tehsil": tehsil,
+            "khasra_number": khasra_number,
+            "division": division,
+            "transfer_type": user_type.capitalize(),
+            "tax_amount_payable": str(taxes_fee.amount),
+        }
+        return JsonResponse(user_details)
+    except LandTransfer.DoesNotExist:
+        return JsonResponse({"error": "LandTransfer not found"}, status=404)
+    except TaxesFee.DoesNotExist:
+        return JsonResponse({"error": "Tax data not found"}, status=404)
 
 
 @api_view(["GET"])
@@ -535,11 +511,8 @@ def login_view(request):
         except get_user_model().DoesNotExist:
             return JsonResponse({"error": "User does not exist."}, status=400)
     else:
-        return render(
-            request,
-            "login_prompt.html",
-            {"message": "Your email has been verified, please log in through the app."},
-        )
+        # Ensure that we return a response even if it's not a POST request
+        return render(request, "teh_login.html")
 
 
 @api_view(["POST"])
@@ -565,3 +538,261 @@ def resend_confirmation_email(request):
         return JsonResponse({"error": "Identifier not found."}, status=404)
     except EmailAddress.DoesNotExist:
         return JsonResponse({"error": "Email address not found."}, status=404)
+
+
+# WEBSITE
+@login_required
+def view_dashboard(request):
+    land_data = LandTransfer.objects.filter(status="pending").order_by("-id")
+    print("User:", request.user, "Authenticated:", request.user.is_authenticated)
+    return render(request, "teh_dashboard.html", {"land_data": land_data})
+
+
+@login_required
+def view_approved(request, id=None):
+    transfer = LandTransfer.objects.get(id=id)
+    context = {
+        "transfer": transfer,
+    }
+    return render(request, "teh_approved.html", context)
+
+
+@login_required
+def view_disapp(request, id):
+    if request.method == "POST":
+        LandTransfer.objects.filter(id=id).update(status="disapproved")
+        return redirect("teh_dashboard")
+
+
+@login_required
+def store_data(request):
+    if request.method == "POST":
+        land_id = request.POST.get("land_id")
+        amount = Decimal(request.POST.get("amount"))
+        transfer_type = request.POST.get("transfer_type")
+        transfer = LandTransfer.objects.get(id=land_id)
+
+        def calculate_tax(user_type, filer_status, amount):
+            if transfer_type == "selling":
+                if user_type == "transferor":
+                    return (
+                        amount * Decimal("0.02")
+                        if filer_status == "filer"
+                        else amount * Decimal("0.04")
+                    )
+                elif user_type == "transferee":
+                    return (
+                        amount * Decimal("0.11")
+                        if filer_status == "filer"
+                        else amount * Decimal("0.09")
+                    )
+            return Decimal("0")  # No tax for gifts
+
+        tax_amount_transferor = calculate_tax(
+            "transferor", transfer.transferor_user.filer_status, amount
+        )
+        tax_amount_transferee = calculate_tax(
+            "transferee", transfer.transferee_user.filer_status, amount
+        )
+
+        TaxesFee.objects.create(
+            transfer_id=land_id,
+            tax_type="transferor",
+            amount=tax_amount_transferor,
+            status="pending",
+        )
+        TaxesFee.objects.create(
+            transfer_id=land_id,
+            tax_type="transferee",
+            amount=tax_amount_transferee,
+            status="pending",
+        )
+
+        transfer.status = "approved"
+        transfer.save()
+        return redirect("teh_dashboard")
+
+
+@login_required
+def view_status(request):
+    # Fetch all land transfers with both parties having paid their taxes
+    land_transfers = LandTransfer.objects.annotate(
+        transferor_paid=Exists(
+            TaxesFee.objects.filter(
+                transfer_id=OuterRef("pk"), tax_type="transferor", status="paid"
+            )
+        ),
+        transferee_paid=Exists(
+            TaxesFee.objects.filter(
+                transfer_id=OuterRef("pk"), tax_type="transferee", status="paid"
+            )
+        ),
+    ).filter(transferor_paid=True, transferee_paid=True)
+
+    context = {"land_transfers": land_transfers}
+    return render(request, "teh_status.html", context)
+
+
+@csrf_exempt
+def view_login(request):
+    if request.method == "POST":
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+        try:
+            user = get_user_model().objects.get(
+                email=email, role="tehsildar"
+            )  # Ensure only 'tehsildar' can log in
+            if not EmailAddress.objects.filter(user=user, verified=True).exists():
+                return JsonResponse(
+                    {"error": "Email not verified. Please verify your email."},
+                    status=401,
+                )
+            user = authenticate(request, username=user.username, password=password)
+
+            if user:
+                serializer = TokenObtainPairSerializer(
+                    data={"username": user.username, "password": password}
+                )
+                if serializer.is_valid():
+                    token = serializer.validated_data
+                    return JsonResponse(
+                        {
+                            "message": "Login successful",
+                            "access": token["access"],
+                            "refresh": token["refresh"],
+                            "user": {
+                                "username": user.username,
+                                "email": user.email,
+                                "wallet_address": user.wallet_address,
+                            },
+                        },
+                        status=200,
+                    )
+                return JsonResponse({"error": "Invalid credentials"}, status=400)
+            return JsonResponse({"error": "Invalid login or password."}, status=401)
+        except get_user_model().DoesNotExist:
+            return JsonResponse({"error": "User does not exist."}, status=404)
+    else:
+        return render(request, "teh_login.html")
+
+
+def view_registration(request):
+    return render(request, "teh_registration.html")
+
+
+@csrf_exempt
+def login_check(request):
+    if request.method == "POST":
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+
+        print("Received email:", email)
+        print("Received password:", password)
+        print(request.POST)  # This will show all received POST data
+
+        try:
+            user = get_user_model().objects.get(email=email, role="tehsildar")
+            if not EmailAddress.objects.filter(user=user, verified=True).exists():
+                return JsonResponse(
+                    {"error": "Email not verified. Please verify your email."},
+                    status=400,
+                )
+
+            user = authenticate(request, username=user.username, password=password)
+            if user:
+                # Logging in the user
+                login(request, user)
+                return redirect("teh_dashboard")
+            else:
+                return JsonResponse({"error": "Invalid login or password."}, status=400)
+
+        except get_user_model().DoesNotExist:
+            return JsonResponse({"error": "User does not exist."}, status=400)
+
+    else:
+        # Optional: Handle non-POST requests here, if necessary
+        return JsonResponse({"error": "Invalid request"}, status=405)
+
+
+def logout_view(request):
+    logout(request)
+    return redirect("teh_login")
+
+
+@require_POST
+def calculate_tax(request):
+    data = json.loads(request.body)
+    user_type = data.get("userType")
+    amount = Decimal(data.get("amount"))
+    filer_status_transferor = data.get("filerStatusTransferor")
+    filer_status_transferee = data.get("filerStatusTransferee")
+    transfer_type = data.get("transferType")
+
+    def get_tax_amount(filer_status, amount, is_transferor=True):
+        if transfer_type == "selling":
+            if is_transferor:
+                return (
+                    amount * Decimal("0.02")
+                    if filer_status == "filer"
+                    else amount * Decimal("0.04")
+                )
+            else:
+                return (
+                    amount * Decimal("0.11")
+                    if filer_status == "filer"
+                    else amount * Decimal("0.09")
+                )
+        return Decimal("0")
+
+    tax_transferor = get_tax_amount(filer_status_transferor, amount, is_transferor=True)
+    tax_transferee = get_tax_amount(
+        filer_status_transferee, amount, is_transferor=False
+    )
+
+    return JsonResponse(
+        {"taxTransferor": float(tax_transferor), "taxTransferee": float(tax_transferee)}
+    )
+
+
+@csrf_exempt
+def user_login(request):
+    if request.method == "POST":
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+        print("Received email:", email)
+        print("Received password:", password)
+        print(request.POST)  # This will show all received POST data
+
+        try:
+            user = get_user_model().objects.get(email=email)
+            if not EmailAddress.objects.filter(user=user, verified=True).exists():
+                return JsonResponse(
+                    {"error": "Email not verified. Please verify your email."},
+                    status=400,
+                )
+
+            user = authenticate(request, username=user.username, password=password)
+            if user:
+                # Logging in the user
+                login(request, user)
+                return redirect("user_dashboard")
+            else:
+                return JsonResponse({"error": "Invalid login or password."}, status=400)
+
+        except get_user_model().DoesNotExist:
+            return JsonResponse({"error": "User does not exist."}, status=400)
+
+    else:
+        # Optional: Handle non-POST requests here, if necessary
+        return JsonResponse({"error": "Invalid request"}, status=405)
+
+
+@login_required
+def user_dashboard(request):
+    # Query for lands where current user is the transferee and taxes are paid by both parties
+    lands = LandTransfer.objects.filter(
+        transferee_user=request.user,
+        taxesfee__status="paid",  # Adjust this field based on your model structure
+    ).distinct()
+
+    return render(request, "user_dashboard.html", {"lands": lands})

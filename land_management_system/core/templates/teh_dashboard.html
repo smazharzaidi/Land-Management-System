@@ -1,0 +1,402 @@
+<!-- website/templates/website/home.html -->
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+
+
+    <!-- Favicons -->
+
+    <link rel="stylesheet" href="{% static 'website/img/favicon.png' %}" rel="icon">
+    <link rel="stylesheet" href="{% static 'website/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
+
+
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Raleway:300,300i,400,400i,500,500i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i"
+        rel="stylesheet">
+
+
+    <!-- Vendor CSS Files -->
+    <link rel="stylesheet" href="{% static 'website/vendor/fontawesome-free/css/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'website/vendor/animate.css/animate.min.css' %}">
+    <link rel="stylesheet" href="{% static 'website/vendor/bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'website/vendor/bootstrap-icons/bootstrap-icons.css' %}">
+    <link rel="stylesheet" href="{% static 'website/vendor/boxicons/css/boxicons.min.css' %}">
+    <link rel="stylesheet" href="{% static 'website/vendor/glightbox/css/glightbox.min.css' %}">
+    <link rel="stylesheet" href="{% static 'website/vendor/remixicon/remixicon.css' %}">
+    <link rel="stylesheet" href="{% static 'website/vendor/swiper/swiper-bundle.min.css' %}">
+
+    <!-- Template Main CSS File -->
+
+    <link rel="stylesheet" href="{% static 'website/css/admin_styles.css' %}">
+    <link rel="stylesheet" href="{% static 'website/css/datatables.css' %}">
+</head>
+
+
+<body>
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div class="primary-bg shadow border-end " id="sidebar-wrapper">
+            <div class="text-center primary-text bg-blue-color fs-4 fw-semibold text-uppercase border-bottom">
+                <h2 class="text-orange pt-3 pb-2">Land MS</h2>
+            </div>
+            <ul class="navbar-nav sidebar_list">
+                <li class="nav-item px-2 py-0 mt-1">
+                    <a href="{% url 'teh_dashboard' %}" class="text-decoration-none nav-link px-2 active">
+                        <span><i class="fas fa-tachometer-alt me-2"></i></span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item px-2 py-0 mt-1">
+                    <a class="text-decoration-none nav-link px-2 d-flex justify-content-between"
+                        data-bs-toggle="collapse" href="#collapseSchedular" onclick="toggleArrow1()" role="button"
+                        aria-expanded="false" aria-controls="collapseExample">
+                        <span><i class="fa-solid fa-clipboard-list me-2 size"></i>Status</span>
+                        <span id="myArrow2"><i class="fas fa-angle-right"></i></span>
+                    </a>
+                    <ul class="collapse navbar-nav mt-1" id="collapseSchedular">
+                        <li class="nav-item px-2 py-0">
+                            <a href="{% url 'teh_status' %}" class="text-decoration-none nav-link px-2">
+                                <i class="fa-solid fa-file-shield me-2 size"></i> Check Status</a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item px-2 py-0 mt-1">
+                    <a href="{% url 'teh_logout' %}" class="text-decoration-none nav-link px-2">
+                        <span><i class="fas fa-power-off me-2"></i></span>
+                        <span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <!-- /#sidebar-wrapper -->
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <!-- navbar start from here -->
+            <header class="">
+                <nav class="bg-blue custom_nav">
+                    <div class="container-fluid mt-1">
+                        <div class="row g-2 align-items-center justify-content-between">
+                            <div class="col-4 col-sm-4 col-md-6 col-lg-6 col-xl-6 col-xxl-6">
+                                <div class="d-flex align-items-center text-white">
+                                    <i class="fas fa-sliders-h fs-4 me-3" style="color: #fff;" id="menu-toggle"></i>
+                                </div>
+                            </div>
+                            <div class="col-8 col-sm-8 col-md-6 col-lg-6 col-xl-6 col-xxl-6 text-end">
+                                <div class="d-flex align-items-center justify-content-end">
+                                    <div class="dropdown">
+                                        <button class="btn p-0 border-0" type="button" id="dropdownMenuButton1"
+                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                            <div class="d-flex align-items-center justify-content-center">
+                                                <span><i class="fas fa-bell text-light"></i></span>
+                                            </div>
+                                        </button>
+                                        <ul class="dropdown-menu" style="width: 300px"
+                                            aria-labelledby="dropdownMenuButton1">
+                                            <li>
+                                                <hr>
+                                            </li>
+                                            <li>
+                                                <div>
+                                                    <span class="fs-13 text-capitalize text-secondary ps-3">today</span>
+                                                    <a class="dropdown-item fs-14 dropitemone d-flex justify-content-between py-2"
+                                                        href="#">
+                                                        <div class="d-flex align-items-start">
+                                                            <span
+                                                                class="text-capitalize circlewhite bg-secondary text-white">
+                                                                amc
+                                                            </span>
+                                                            <span class="text-capitalize ps-2 fs-12 text-wrap">
+                                                                Lorem ipsum dolor sit amet, consectetur adipisicing
+                                                                elit.
+                                                            </span>
+                                                        </div>
+                                                        <p class="mb-0 fs-12 text-secondary">2 min</p>
+                                                    </a>
+                                                </div>
+                                                <div>
+                                                    <span
+                                                        class="fs-13 text-capitalize text-secondary ps-3">yesterday</span>
+                                                    <a class="dropdown-item fs-14 dropitemone d-flex justify-content-between py-2"
+                                                        href="#">
+                                                        <div class="d-flex align-items-start">
+                                                            <span
+                                                                class="text-capitalize circlewhite bg-secondary text-white">
+                                                                amc
+                                                            </span>
+                                                            <span class="text-capitalize ps-2 fs-12 text-wrap">
+                                                                Lorem ipsum dolor sit amet, consectetur adipisicing
+                                                                elit.
+                                                            </span>
+                                                        </div>
+                                                        <p class="mb-0 fs-12 text-secondary">2 min</p>
+                                                    </a>
+                                                </div>
+                                                <div>
+                                                    <span class="fs-13 text-capitalize text-secondary ps-3">today</span>
+                                                    <a class="dropdown-item fs-14 dropitemone d-flex justify-content-between py-2"
+                                                        href="#">
+                                                        <div class="d-flex align-items-start">
+                                                            <span
+                                                                class="text-capitalize circlewhite bg-secondary text-white">
+                                                                amc
+                                                            </span>
+                                                            <span class="text-capitalize ps-2 fs-12 text-wrap">
+                                                                Lorem ipsum dolor sit amet, consectetur adipisicing
+                                                                elit.
+                                                            </span>
+                                                        </div>
+                                                        <p class="mb-0 fs-12 text-secondary">2 min</p>
+                                                    </a>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+
+                                    <div class="dropdown">
+                                        <button class="btn p-0 border-0 " type="button" id="dropdownMenuButton1"
+                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                            <div class="d-flex align-items-center ms-3">
+                                                <span><i class="fas fa-user-circle text-light fs-2"></i></span>
+                                            </div>
+                                        </button>
+                                        <ul class="dropdown-menu lh-sm" aria-labelledby="dropdownMenuButton1">
+                                            <li>
+                                                <a class="dropdown-item fs-14 dropitem d-flex align-items-center"
+                                                    href="{% url 'logout' %}">
+                                                    <span>
+                                                        <i class="fas fa-power-off"></i>
+                                                    </span>
+                                                    <span class="text-capitalize p-2">
+                                                        Logout
+                                                    </span>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+            </header>
+            <!-- navbar end here -->
+            <div class="container-fluid px-4">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="card border-0">
+                            <div class="card-body px-0">
+                                <h4 class="text-orange mb-3">All of TasilDar</h4>
+                                <div class="row g-3">
+                                    <div class="col-lg-12">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered" id="table">
+                                                        <thead class="bg_orange text-light fw-semibold">
+                                                            <th>
+                                                                <span>
+                                                                    ID
+                                                                </span>
+                                                            </th>
+                                                            <th>
+                                                                <span>
+                                                                    Transferor User
+                                                                </span>
+                                                            </th>
+                                                            <th>
+                                                                <span>
+                                                                    Transferee User
+                                                                </span>
+                                                            </th>
+                                                            <th>
+                                                                <span>
+                                                                    Transfer Type
+                                                                </span>
+                                                            </th>
+                                                            <th>
+                                                                <span>
+                                                                    Status
+                                                                </span>
+                                                            </th>
+                                                            <th class="text-center ">
+                                                                <span>
+                                                                    Action
+                                                                </span>
+                                                            </th>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for transfer in land_data %}
+                                                            <tr>
+                                                                <td>{{ transfer.id }}</td>
+                                                                <td>{{ transfer.transferor_user }}</td>
+                                                                <td>{{ transfer.transferee_user }}</td>
+                                                                <td>{{ transfer.transfer_type }}</td>
+                                                                <td>{{ transfer.status }}</td>
+                                                                <td>
+                                                                    <div
+                                                                        class="d-flex justify-content-center  align-items-center  g-3">
+                                                                        <div class="mx-1">
+                                                                            <a href="{% url 'teh_approved' transfer.id %}"
+                                                                                class="btn btn-main">
+                                                                                <span><i
+                                                                                        class="fas fa-check"></i></span>
+                                                                            </a>
+                                                                        </div>
+                                                                        <div class="mx-1">
+                                                                            <form
+                                                                                action="{% url 'teh_dispproved' transfer.id %}"
+                                                                                method="POST">
+                                                                                {% csrf_token %}
+                                                                                <button type="submit"
+                                                                                    class="btn btn-main">
+                                                                                    <span><i
+                                                                                            class="fas fa-trash"></i></span>
+                                                                                </button>
+                                                                            </form>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- /#page-content-wrapper -->
+        </div>
+
+
+
+        <!-- Modal -->
+        <div class="modal fade" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered text-center ">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-main text-center" id="viewModalLabel">Decline Request</h5>
+                    </div>
+                    <div class="modal-body">
+                        <div class="">
+                            <span class="fs-1 text-orange"><i class="fas fa-trash"></i></span>
+                            <p class="fs-4 text-orange">Are you Sure!</p>
+                        </div>
+                        <hr>
+                        <div class="d-flex align-items-center  justify-content-between ">
+                            <button type="button" class="btn btn-main px-5" data-bs-dismiss="modal">Sure</button>
+                            <button type="button" class="btn btn-outline-dark px-5 "
+                                data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+        <script src="{% static 'website/js/app.js' %}"></script>
+        <script src="{% static 'website/js/datatables.js' %}"></script>
+        <script src="{% static 'website/js/jquery.multiselect.js' %}"></script>
+        <script src="{% static 'website/js/bootstrap.bundle.min.js' %}"></script>
+
+        <script>
+            toggleButton.onclick = function () {
+                el.classList.toggle("toggled");
+            };
+        </script>
+
+
+
+        <script type="text/javascript">
+            $(document).ready(function () {
+                $('#table').DataTable({
+                    "language": {
+                        "paginate": {
+                            "previous": '<i class="fa-solid fa-chevron-left p-5px"></i>',
+                            "next": '<i class="fa-solid fa-chevron-right p-5px"></i>',
+                        },
+                        "lengthMenu": "",
+                        search: "",
+                        searchPlaceholder: "Search..."
+                    },
+
+                    "ordering": true
+                });
+
+            });
+        </script>
+
+
+
+        <script>
+            // Sample project data
+            var projectData = {
+                labels: ["January", "February", "March", "April", "May", "June"],
+                datasets: [{
+                    label: 'Investment',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1,
+                    data: [5, 10, 15, 7, 20, 12] // Replace with your project data
+                }]
+            };
+
+            // Get the canvas element and create the chart
+            var ctx = document.getElementById('projectChart').getContext('2d');
+            var projectChart = new Chart(ctx, {
+                type: 'bar',
+                data: projectData,
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            var projectData = {
+                labels: ["January", "February", "March", "April", "May", "June"],
+                datasets: [{
+                    label: 'Repayments',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1,
+                    data: [5, 10, 15, 7, 20, 12] // Replace with your project data
+                }]
+            };
+
+            // Get the canvas element and create the chart
+            var ctx = document.getElementById('projectChart2').getContext('2d');
+            var projectChart = new Chart(ctx, {
+                type: 'line',
+                data: projectData,
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        </script>
+
+</body>
+
+</html>

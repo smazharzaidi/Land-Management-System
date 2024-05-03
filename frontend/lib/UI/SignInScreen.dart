@@ -17,38 +17,35 @@ class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController forgotPasswordController =
       TextEditingController();
   bool isEmail = true;
-  bool isLoading = false; // Added loading state variable
+  bool isLoading = false;
   TextEditingController signInController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   final AuthServiceLogin _authService = AuthServiceLogin();
 
   void _handleLogin() async {
+    if (signInController.text.trim().isEmpty ||
+        passwordController.text.trim().isEmpty) {
+      _showErrorDialog('Please enter both email/CNIC and password.');
+      return;
+    }
     setState(() => isLoading = true);
-
-    String username = signInController.text.trim();
-    String password = passwordController.text.trim();
-
-    if (username.isNotEmpty && password.isNotEmpty) {
-      try {
-        String result = await _authService.login(username, password);
-        if (result == "success") {
-          Navigator.of(context).pushReplacement(MaterialPageRoute(
-              builder: (context) =>
-                  DashboardScreen(authService: _authService)));
-        } else if (result == "Email not verified. Please verify your email.") {
-          // Show the dialog for resending the verification email
-          _showUnverifiedEmailDialog(username);
-        } else {
-          _showErrorDialog(result);
-        }
-      } catch (e) {
-        _showErrorDialog('An error occurred: ${e.toString()}');
-      } finally {
+    try {
+      String result = await _authService.login(
+          signInController.text.trim(), passwordController.text.trim());
+      if (result == "success") {
+        Navigator.of(context).pushReplacement(MaterialPageRoute(
+            builder: (context) => DashboardScreen(authService: _authService)));
+      } else if (result == "Email not verified. Please verify your email.") {
+        _showUnverifiedEmailDialog(signInController.text.trim());
+      } else {
+        _showErrorDialog(result);
+      }
+    } catch (e) {
+      _showErrorDialog('An error occurred: ${e.toString()}');
+    } finally {
+      if (mounted) {
         setState(() => isLoading = false);
       }
-    } else {
-      _showErrorDialog('Please enter both email/CNIC and password.');
-      setState(() => isLoading = false);
     }
   }
 
@@ -169,82 +166,84 @@ class _SignInScreenState extends State<SignInScreen> {
             ),
             Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    SizedBox(
-                        height:
-                            0), // Adjust this value to position the form properly
-                    buildTextField(
-                      controller: signInController,
-                      label: isEmail ? 'Email' : 'CNIC',
-                      keyboardType: isEmail
-                          ? TextInputType.emailAddress
-                          : TextInputType.number,
-                      inputFormatter: isEmail ? null : CNICInputFormatter(),
-                    ),
-                    OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.green),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      SizedBox(
+                          height:
+                              0), // Adjust this value to position the form properly
+                      buildTextField(
+                        controller: signInController,
+                        label: isEmail ? 'Email' : 'CNIC',
+                        keyboardType: isEmail
+                            ? TextInputType.emailAddress
+                            : TextInputType.number,
+                        inputFormatter: isEmail ? null : CNICInputFormatter(),
+                      ),
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.black),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 50, vertical: 15),
                         ),
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          isEmail = !isEmail;
-                        });
-                      },
-                      child: Text(
-                        isEmail ? 'Switch to CNIC' : 'Switch to Email',
-                        style: GoogleFonts.lato(
-                          color: Colors.green,
-                          fontSize: 16,
+                        onPressed: () {
+                          setState(() {
+                            isEmail = !isEmail;
+                          });
+                        },
+                        child: Text(
+                          isEmail ? 'Switch to CNIC' : 'Switch to Email',
+                          style: GoogleFonts.lato(
+                            color: Colors.black,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
-                    ),
-                    SizedBox(height: 20),
-                    buildTextField(
-                      controller: passwordController,
-                      label: 'Password',
-                      initiallyObscure: true,
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+                      SizedBox(height: 20),
+                      buildTextField(
+                        controller: passwordController,
+                        label: 'Password',
+                        initiallyObscure: true,
+                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 90.0),
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30.0)),
+                              padding: EdgeInsets.symmetric(vertical: 15.0)),
+                          onPressed: _handleLogin,
+                          child: isLoading
+                              ? CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
+                                )
+                              : Text(
+                                  'Sign In',
+                                  style: GoogleFonts.lato(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                         ),
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                       ),
-                      onPressed: _handleLogin,
-                      child: isLoading
-                          ? CircularProgressIndicator(
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            )
-                          : Text(
-                              'Sign In',
-                              style: GoogleFonts.lato(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                    ),
-                    TextButton(
-                      onPressed: _showForgotPasswordDialog,
-                      child: Text(
-                        'Forgot Password?',
-                        style: TextStyle(color: Colors.blueAccent),
+
+                      TextButton(
+                        onPressed: _showForgotPasswordDialog,
+                        child: Text(
+                          'Forgot Password?',
+                          style: TextStyle(color: Colors.blueAccent),
+                        ),
                       ),
-                    ),
-                  ],
-                )
-              ),
+                    ],
+                  )),
             ),
             Positioned(
               left: 0,
@@ -266,15 +265,15 @@ class _SignInScreenState extends State<SignInScreen> {
                 ),
               ),
             ),
-            if (isLoading)
-              Positioned(
-                child: Container(
-                  color: Colors.black.withOpacity(0.5),
-                  child: Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
-              ),
+            // if (isLoading)
+            //   Positioned(
+            //     child: Container(
+            //       color: Colors.black.withOpacity(0.5),
+            //       child: Center(
+            //         child: CircularProgressIndicator(),
+            //       ),
+            //     ),
+            //   ),
           ],
         ),
       ),
