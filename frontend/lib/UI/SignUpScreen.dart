@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../Functionality/CNICInputFormatter.dart';
+import 'ChatWidget.dart';
 import 'SignInScreen.dart'; // Make sure this import is correct based on your project structure
 import '../Functionality/SignUpAuth.dart'; // Replace with the correct import path for your AuthService
 
@@ -129,6 +130,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ],
         ),
       ),
+      floatingActionButton: ChatWidget(),
     );
   }
 

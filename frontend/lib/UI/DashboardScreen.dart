@@ -8,6 +8,7 @@ import 'package:frontend/UI/SignInScreen.dart';
 import '../Functionality/DashboardLogic.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web3modal_flutter/web3modal_flutter.dart';
+import 'ChatWidget.dart';
 import 'NFTWalletScreen.dart';
 import '../Functionality/SignInAuth.dart';
 import '../Functionality/TransferService.dart';
@@ -207,6 +208,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               ),
+        floatingActionButton: ChatWidget(),
       );
     }
   }

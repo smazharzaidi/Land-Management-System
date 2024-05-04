@@ -4,6 +4,7 @@ import 'package:frontend/Functionality/SignInAuth.dart';
 import '../Functionality/CNICInputFormatter.dart';
 import 'package:frontend/UI/SignUpScreen.dart';
 import 'package:flutter/services.dart';
+import 'ChatWidget.dart';
 import 'DashboardScreen.dart'; // Import the DashboardScreen
 
 class SignInScreen extends StatefulWidget {
@@ -277,6 +278,7 @@ class _SignInScreenState extends State<SignInScreen> {
           ],
         ),
       ),
+      floatingActionButton: ChatWidget(),
     );
   }
 

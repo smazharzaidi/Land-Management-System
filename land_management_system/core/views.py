@@ -795,15 +795,38 @@ def user_login(request):
 
 @login_required
 def user_dashboard(request):
-    # Query for lands where current user is the transferee and taxes are paid by both parties
+    with open(
+        "D:\\University\\FYP\\final_project\\LandManagementABI.json", "r"
+    ) as abi_file:
+        abi = json.load(abi_file)
+    # Query for lands where the current user is the transferor and taxes are paid by both the transferor and transferee
     lands = LandTransfer.objects.filter(
-        transferee_user=request.user,
-        taxesfee__status="paid",  # Adjust this field based on your model structure
+        transferor_user=request.user,
+        taxesfee__status="paid",  # Ensure this field is correctly named based on your model structure
     ).distinct()
 
-    return render(request, "user_dashboard.html", {"lands": lands})
+    # Filter to ensure that both transferor and transferee have paid their respective taxes
+    lands = [
+        land
+        for land in lands
+        if land.taxesfee_set.filter(tax_type="transferor").exists()
+        and land.taxesfee_set.filter(tax_type="transferee").exists()
+    ]
+    print("ABI is a valid JSON")
+    contract_address = "0x7Ac3E878727211328EcfE4D5eecFd8C9Fe3D2089"
+    return render(
+        request,
+        "user_dashboard.html",
+        {
+            "lands": lands,
+            "abi": json.dumps(abi),  # Your existing ABI handling
+            "contract_address": contract_address,  # Pass this to the template
+        },
+    )
 
 
 def user_logout(request):
     logout(request)
     return redirect("user_login")
+
+
