@@ -470,25 +470,33 @@ def logout_view(request):
 @csrf_exempt
 def login_view(request):
     if request.method == "POST":
-        login = request.POST.get("username")
+        login = request.POST.get("username").strip()
+
         password = request.POST.get("password")
         try:
+            user = None
             if "@" in login:
                 user = get_user_model().objects.get(email=login)
             else:
                 user = get_user_model().objects.get(cnic=login)
+
             if not EmailAddress.objects.filter(user=user, verified=True).exists():
                 return JsonResponse(
                     {"error": "Email not verified. Please verify your email."},
                     status=400,
                 )
+
+            print("Username:", user.username, "Password:", password)
             user = authenticate(request, username=user.username, password=password)
 
             if user:
                 serializer = TokenObtainPairSerializer(
                     data={"username": user.username, "password": password}
                 )
+                print("Serializer Data:", serializer.initial_data)
                 if serializer.is_valid():
+                    # Proceed with token generation
+
                     token = serializer.validated_data
                     return JsonResponse(
                         {
@@ -507,11 +515,9 @@ def login_view(request):
                     return JsonResponse({"error": "Invalid credentials"}, status=400)
             else:
                 return JsonResponse({"error": "Invalid login or password."}, status=400)
-
         except get_user_model().DoesNotExist:
-            return JsonResponse({"error": "User does not exist."}, status=400)
+            return JsonResponse({"error": "User does not exist."}, status=404)
     else:
-        # Ensure that we return a response even if it's not a POST request
         return render(request, "teh_login.html")
 
 
@@ -754,11 +760,12 @@ def calculate_tax(request):
     )
 
 
-@csrf_exempt
+@csrf_exempt  # Consider CSRF token if needed, especially for POST requests.
 def user_login(request):
     if request.method == "POST":
         email = request.POST.get("email")
         password = request.POST.get("password")
+
         print("Received email:", email)
         print("Received password:", password)
         print(request.POST)  # This will show all received POST data
@@ -783,8 +790,7 @@ def user_login(request):
             return JsonResponse({"error": "User does not exist."}, status=400)
 
     else:
-        # Optional: Handle non-POST requests here, if necessary
-        return JsonResponse({"error": "Invalid request"}, status=405)
+        return render(request, "user_login.html")
 
 
 @login_required
@@ -796,3 +802,8 @@ def user_dashboard(request):
     ).distinct()
 
     return render(request, "user_dashboard.html", {"lands": lands})
+
+
+def user_logout(request):
+    logout(request)
+    return redirect("user_login")
