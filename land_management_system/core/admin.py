@@ -13,6 +13,7 @@ class UserAdmin(admin.ModelAdmin):
         "cnic",
         "role",
         "filer_status",
+        "tehsil"
     )
     search_fields = (
         "username",
@@ -21,6 +22,7 @@ class UserAdmin(admin.ModelAdmin):
         "wallet_address",
         "mobile_number",
         "cnic",
+        "tehsil"
     )
 
 

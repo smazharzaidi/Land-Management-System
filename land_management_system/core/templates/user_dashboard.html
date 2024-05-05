@@ -56,10 +56,11 @@
           }
         } else {
           alert('MetaMask is not installed. Please install MetaMask to interact.')
+          return null
         }
       }
       
-      async function transferLand(landId, receiverWalletAddress, landDetails) {
+      async function transferLand(landId, receiverWalletAddress) {
         const web3 = await connectWallet()
         if (!web3) {
           console.log('Wallet connection failed or was denied by user.')
@@ -72,29 +73,29 @@
         const accounts = await web3.eth.getAccounts()
         const fromAddress = accounts[0] // Using the first account in MetaMask
       
+        console.log(`Initiating transfer: landId=${landId}, receiverWalletAddress=${receiverWalletAddress}`)
         console.log('Transferor Address:', fromAddress)
-        console.log('Transferee Address:', receiverWalletAddress)
-        console.log('Contract Address:', contractAddress)
-        console.log('Land ID:', landId)
-        console.log('Khasra:', landDetails.khasra)
-        console.log('Tehsil:', landDetails.tehsil)
-        console.log('Division:', landDetails.division)
       
-        try {
-          const gasEstimate = await contract.methods.safeTransferFrom(fromAddress, receiverWalletAddress, landId).estimateGas({ from: fromAddress })
-          const transferResult = await contract.methods.safeTransferFrom(fromAddress, receiverWalletAddress, landId).send({ from: fromAddress, gas: gasEstimate })
-          console.log('Transfer successful:', transferResult)
-        } catch (error) {
-          console.error('Error transferring NFT:', error)
-          alert(`Error during the transfer: ${error.message}`)
+        const response = await fetch("{% url 'transfer_nft' %}", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: JSON.stringify({
+            land_id: landId,
+            receiver_wallet_address: receiverWalletAddress,
+            from_address: fromAddress
+          })
+        })
+      
+        const result = await response.json()
+        console.log(`Transfer result: ${JSON.stringify(result)}`)
+        if (result.status === 'success') {
+          alert('Transfer successful!')
+        } else {
+          alert(`Error during transfer: ${result.message}`)
         }
-      }
-      
-      async function updateMetadata(landId, newOwnerWallet) {
-        fetch(`/update-metadata/${landId}/${newOwnerWallet}`)
-          .then((response) => response.json())
-          .then((data) => console.log(data))
-          .catch((error) => console.error('Error updating metadata:', error))
       }
       
       window.ethereum.on('accountsChanged', (accounts) => {

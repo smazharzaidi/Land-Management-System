@@ -51,5 +51,6 @@ urlpatterns = [
     path("calculate_tax/", calculate_tax, name="calculate_tax"),
     path("user_login/", user_login, name="user_login"),
     path("user_dashboard/", user_dashboard, name="user_dashboard"),
-    path('user_logout/', user_logout, name='user_logout'),
+    path("user_logout/", user_logout, name="user_logout"),
+    path("transfer_nft/", transfer_nft_view, name="transfer_nft"),
 ]

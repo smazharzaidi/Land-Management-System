@@ -37,12 +37,16 @@ from django.core.exceptions import ObjectDoesNotExist
 import io
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from .utils.blockchain_utils import *
 
 # WEBSITE IMPORTS
 from django.template.loader import render_to_string
 from decimal import Decimal
 from django.views.decorators.http import require_POST
 
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
@@ -549,17 +553,20 @@ def resend_confirmation_email(request):
 # WEBSITE
 @login_required
 def view_dashboard(request):
-    land_data = LandTransfer.objects.filter(status="pending").order_by("-id")
-    print("User:", request.user, "Authenticated:", request.user.is_authenticated)
+    tehsildar_tehsil = request.user.tehsil
+    land_data = LandTransfer.objects.filter(
+        land__tehsil=tehsildar_tehsil, status="pending"
+    ).order_by("-id")
+    print(
+        f"User: {request.user}, Tehsil: {tehsildar_tehsil}, Authenticated: {request.user.is_authenticated}"
+    )
     return render(request, "teh_dashboard.html", {"land_data": land_data})
 
 
 @login_required
 def view_approved(request, id=None):
     transfer = LandTransfer.objects.get(id=id)
-    context = {
-        "transfer": transfer,
-    }
+    context = {"transfer": transfer}
     return render(request, "teh_approved.html", context)
 
 
@@ -795,34 +802,34 @@ def user_login(request):
 
 @login_required
 def user_dashboard(request):
-    with open(
-        "D:\\University\\FYP\\final_project\\LandManagementABI.json", "r"
-    ) as abi_file:
-        abi = json.load(abi_file)
-    # Query for lands where the current user is the transferor and taxes are paid by both the transferor and transferee
-    lands = LandTransfer.objects.filter(
-        transferor_user=request.user,
-        taxesfee__status="paid",  # Ensure this field is correctly named based on your model structure
-    ).distinct()
-
-    # Filter to ensure that both transferor and transferee have paid their respective taxes
-    lands = [
-        land
-        for land in lands
-        if land.taxesfee_set.filter(tax_type="transferor").exists()
-        and land.taxesfee_set.filter(tax_type="transferee").exists()
-    ]
-    print("ABI is a valid JSON")
-    contract_address = "0x7Ac3E878727211328EcfE4D5eecFd8C9Fe3D2089"
-    return render(
-        request,
-        "user_dashboard.html",
-        {
-            "lands": lands,
-            "abi": json.dumps(abi),  # Your existing ABI handling
-            "contract_address": contract_address,  # Pass this to the template
-        },
-    )
+    try:
+        with open(
+            "D:\\University\\FYP\\final_project\\LandManagementABI.json", "r"
+        ) as abi_file:
+            abi = json.load(abi_file)
+        lands = LandTransfer.objects.filter(
+            transferor_user=request.user, taxesfee__status="paid"
+        ).distinct()
+        lands = [
+            land
+            for land in lands
+            if land.taxesfee_set.filter(tax_type="transferor").exists()
+            and land.taxesfee_set.filter(tax_type="transferee").exists()
+        ]
+        contract_address = "0x7Ac3E878727211328EcfE4D5eecFd8C9Fe3D2089"
+        logging.debug(f"Lands retrieved for user {request.user.username}: {lands}")
+        return render(
+            request,
+            "user_dashboard.html",
+            {
+                "lands": lands,
+                "abi": json.dumps(abi),
+                "contract_address": contract_address,
+            },
+        )
+    except Exception as e:
+        logging.error(f"Error in user_dashboard view: {e}")
+        return JsonResponse({"status": "error", "message": str(e)})
 
 
 def user_logout(request):
@@ -830,3 +837,43 @@ def user_logout(request):
     return redirect("user_login")
 
 
+@login_required
+def transfer_nft_view(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            land_id = data.get("land_id")
+            transferee_address = data.get("receiver_wallet_address")
+            from_address = data.get("from_address")  # Address from MetaMask
+
+            logging.debug(
+                f"Received data for transfer: land_id={land_id}, transferee_address={transferee_address}, from_address={from_address}"
+            )
+
+            transferee_address = Web3.to_checksum_address(transferee_address)
+
+            land_transfer = LandTransfer.objects.get(id=land_id)
+            nft = NFT.objects.get(land=land_transfer.land)
+
+            web3, contract = connect_to_blockchain()
+
+            receipt = transfer_nft(
+                web3, contract, from_address, transferee_address, int(nft.token_id)
+            )
+
+            logging.info(
+                f"Transfer successful for land ID {land_id}. Transaction receipt: {receipt}"
+            )
+            return JsonResponse(
+                {
+                    "status": "success",
+                    "message": "Transfer successful!",
+                    "transaction_receipt": receipt,
+                }
+            )
+
+        except Exception as e:
+            logging.error(f"Error in transfer_nft_view: {e}")
+            return JsonResponse({"status": "error", "message": str(e)})
+
+    return JsonResponse({"status": "error", "message": "Invalid request method"})

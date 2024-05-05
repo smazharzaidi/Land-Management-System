@@ -17,6 +17,7 @@ class User(AbstractUser):
         choices=(("filer", "Filer"), ("nonfiler", "Non-Filer")),
         null=True,
     )
+    tehsil = models.CharField(max_length=42, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

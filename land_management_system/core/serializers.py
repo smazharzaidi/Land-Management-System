@@ -15,6 +15,7 @@ class UserSerializer(serializers.ModelSerializer):
             "cnic",
             "role",
             "filer_status",
+            "tehsil"
         )
 
 
