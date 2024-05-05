@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:frontend/UI/BottomNavBarScreen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -62,7 +63,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                   authService: _authService,
                 );
               }
-              return SignInScreen();
+              return BottomNavBarScreen();
             }
             return Scaffold(body: Center(child: CircularProgressIndicator()));
           },

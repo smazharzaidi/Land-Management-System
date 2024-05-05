@@ -3,12 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../Functionality/CNICInputFormatter.dart';
-import 'ChatWidget.dart';
-import 'SignInScreen.dart'; // Make sure this import is correct based on your project structure
-import '../Functionality/SignUpAuth.dart'; // Replace with the correct import path for your AuthService
+import '../Functionality/SignUpAuth.dart';
 
 class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({Key? key}) : super(key: key);
+  const SignUpScreen({super.key});
 
   @override
   _SignUpScreenState createState() => _SignUpScreenState();
@@ -22,115 +20,64 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController mobileNumberController = TextEditingController();
   final TextEditingController cnicController = TextEditingController();
   bool isLoading = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[200],
       body: SafeArea(
-        child: Stack(
-          children: [
-            Positioned(
-              top: 20,
-              left: 20,
-              right: 20,
-              child: Text(
-                'Sign Up',
-                style: GoogleFonts.lato(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    SizedBox(height: 80), // Space to move the form down a bit
-                    buildTextField(usernameController, 'Username'),
-                    buildTextField(emailController, 'Email'),
-                    buildTextField(nameController, 'Full Name'),
-                    buildTextField(mobileNumberController, 'Mobile Number',
-                        keyboardType: TextInputType.phone),
-                    buildTextField(cnicController, 'CNIC',
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [CNICInputFormatter()]),
-                    buildTextField(passwordController, 'Password',
-                        initiallyObscure: true),
-                    SizedBox(height: 20),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                          horizontal:
-                              90.0), // Ensures horizontal padding matches the SignIn button
-                      width: double
-                          .infinity, // Ensures the button stretches across the width
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor:
-                              Colors.black, // Match the SignIn button color
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                                30.0), // Same rounded corners as SignIn
-                          ),
-                          padding: EdgeInsets.symmetric(
-                              vertical: 15.0), // Consistent vertical padding
-                        ),
-                        onPressed: () => handleRegistration(
-                            context), // Your existing registration function
-                        child: isLoading
-                            ? CircularProgressIndicator(
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              )
-                            : Text(
-                                'Sign Up',
-                                style: GoogleFonts.lato(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+                buildTextField(usernameController, 'Username'),
+                buildTextField(emailController, 'Email'),
+                buildTextField(nameController, 'Full Name'),
+                buildTextField(mobileNumberController, 'Mobile Number',
+                    keyboardType: TextInputType.phone),
+                buildTextField(cnicController, 'CNIC',
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [CNICInputFormatter()]),
+                buildTextField(passwordController, 'Password',
+                    initiallyObscure: true),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 90.0),
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.0),
                       ),
+                      padding: const EdgeInsets.symmetric(vertical: 15.0),
                     ),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 20,
-              child: Center(
-                  child: TextButton(
-                onPressed: () => Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SignInScreen()),
-                ),
-                child: Text(
-                  "Already have an account? Sign In",
-                  style: GoogleFonts.lato(
-                    color: Colors.black,
-                    fontSize: 16,
+                    onPressed: () => handleRegistration(context),
+                    child: isLoading
+                        ? const CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          )
+                        : Text(
+                            'Sign Up',
+                            style: GoogleFonts.lato(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
-              )),
+              ],
             ),
-            if (isLoading)
-              Positioned(
-                child: Container(
-                  color: Colors.black.withOpacity(0.5),
-                  child: Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
-              ),
-          ],
+          ),
         ),
       ),
-      floatingActionButton: ChatWidget(),
     );
   }
 
@@ -196,10 +143,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
         await _showDialog(context, 'Success', 'Registration successful.');
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const SignInScreen()),
+          MaterialPageRoute(builder: (context) => const SignUpScreen()),
         );
       } else if (jsonResponse.containsKey('errors')) {
-        // Dynamically handle both a single error message and an array of error messages
         String errorMessage;
         if (jsonResponse['errors'] is String) {
           errorMessage = jsonResponse['errors'];
@@ -213,7 +159,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         await _showDialog(context, 'Error', 'Registration failed.');
       }
     } catch (e) {
-      print(e.toString()); // For debugging purposes
+      print(e.toString());
       await _showDialog(context, 'Error', 'An unexpected error occurred.');
     } finally {
       setState(() => isLoading = false);
@@ -221,10 +167,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> _showDialog(
-      BuildContext context, String title, String message) async {
+    BuildContext context,
+    String title,
+    String message,
+  ) async {
     return showDialog<void>(
       context: context,
-      barrierDismissible: false, // User must tap button!
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(title),

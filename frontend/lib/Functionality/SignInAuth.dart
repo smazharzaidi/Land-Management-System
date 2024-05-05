@@ -9,14 +9,14 @@ import 'package:web3modal_flutter/web3modal_flutter.dart';
 import 'LandTransferData.dart';
 
 class AuthServiceLogin {
-  final String baseURL = "http://192.168.1.8:8000/";
+  final String baseURL = "http://192.168.10.5:8000/";
 
   LandTransferData? landTransferData;
   static LandTransferData? currentLandTransferData;
   late W3MService _w3mService;
-  final loginUri = Uri.parse("http://192.168.1.8:8000/login/");
+  final loginUri = Uri.parse("http://192.168.10.5:8000/login/");
   final refreshTokenUri =
-      Uri.parse("http://192.168.1.8:8000/api/token/refresh/");
+      Uri.parse("http://192.168.10.5:8000/api/token/refresh/");
   final storage = SecureStorageService();
   Future<String?> getToken() async {
     return await storage.getToken();
@@ -118,7 +118,7 @@ class AuthServiceLogin {
 
       print("Request URL: ${baseURL}resend_confirmation/");
       var response = await http.post(
-        Uri.parse("http://192.168.1.8:8000/resend_confirmation/"),
+        Uri.parse("http://192.168.10.5:8000/resend_confirmation/"),
         headers: {"Content-Type": "application/x-www-form-urlencoded"},
         body: {"email_or_cnic": email},
       );
@@ -188,7 +188,7 @@ class AuthServiceLogin {
     if (refreshToken != null) {
       var response = await http.post(
         Uri.parse(
-            "http://192.168.1.8:8000/logout/"), // Adjust the URL to your backend's logout endpoint
+            "http://192.168.10.5:8000/logout/"), // Adjust the URL to your backend's logout endpoint
         body: jsonEncode({"refresh": refreshToken}),
         headers: {"Content-Type": "application/json"},
       );

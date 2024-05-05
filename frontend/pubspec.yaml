@@ -7,6 +7,7 @@ environment:
   sdk: ">=3.2.2 <4.0.0"
 
 dependencies:
+  animations: ^2.0.11
   file_picker: ^8.0.3
   flip_card: ^0.7.0
   flutter:

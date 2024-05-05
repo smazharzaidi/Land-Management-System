@@ -1,14 +1,13 @@
 // ignore_for_file: file_names
 import 'package:flutter/widgets.dart';
+import 'package:frontend/UI/BottomNavBarScreen.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/UI/EnterCNIC.dart';
-import 'package:frontend/UI/SignInScreen.dart';
 import '../Functionality/DashboardLogic.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web3modal_flutter/web3modal_flutter.dart';
-import 'ChatWidget.dart';
 import 'NFTWalletScreen.dart';
 import '../Functionality/SignInAuth.dart';
 import '../Functionality/TransferService.dart';
@@ -108,65 +107,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
         ),
-        drawer: Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: <Widget>[
-              DrawerHeader(
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                ),
-                child: Text(
-                  'Menu',
-                  style: GoogleFonts.lato(color: Colors.white, fontSize: 24),
-                ),
-              ),
-              ListTile(
-                title: Text('Land Wallet', style: GoogleFonts.lato()),
-                leading: const Icon(Icons.account_balance_wallet,
-                    color: Colors.black),
-                onTap: () async {
-                  // Mark this callback as asynchronous
-                  Navigator.of(context).pop(); // Close the drawer
-
-                  String? walletAddress =
-                      await _logic.fetchWalletAddress(); // Await the result
-                  if (walletAddress != null) {
-                    // Proceed with using the walletAddress
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => NFTListPage(
-                            address: walletAddress, chain: 'sepolia'),
-                      ),
-                    );
-                  } else {
-                    // Handle the case where the wallet address is null
-                    // For example, show an error message
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text("Error"),
-                          content: Text("Failed to fetch wallet address."),
-                          actions: <Widget>[
-                            TextButton(
-                              child: Text("OK"),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  }
-                },
-              ),
-              // Add more ListTiles for other menu items
-            ],
-          ),
-        ),
         body: _logic.isLoggingOut
             ? Center(child: CircularProgressIndicator())
             : Padding(
@@ -208,7 +148,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               ),
-        floatingActionButton: ChatWidget(),
       );
     }
   }
@@ -539,9 +478,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _handleLogout() async {
     if (!mounted) return;
 
-    // Close the dialog immediately to proceed with the logout
-    Navigator.of(context).pop(); // Close the logout dialog
-
     setState(() {
       _logic.isLoggingOut = true; // Indicate loading
     });
@@ -558,9 +494,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       if (!mounted) return;
 
-      // Navigate to the SignInScreen upon successful logout
-      Navigator.of(context)
-          .pushReplacement(MaterialPageRoute(builder: (_) => SignInScreen()));
+      // Navigate to the BottomNavBarScreen upon successful logout
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => BottomNavBarScreen()),
+        (route) => false,
+      );
     } catch (error) {
       print("Logout failed: $error");
       if (!mounted) return;
@@ -569,6 +507,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _logic.isLoggingOut = false; // Stop indicating loading
       });
       // Optionally, show an error dialog or toast here
+      _showErrorDialog(context, "Logout failed. Please try again.");
     }
   }
 }
