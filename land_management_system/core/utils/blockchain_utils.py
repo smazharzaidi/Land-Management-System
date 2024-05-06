@@ -1,4 +1,3 @@
-# core/utils/blockchain_utils.py
 import json
 import os
 import logging
@@ -6,14 +5,14 @@ import requests
 from web3 import Web3
 from dotenv import load_dotenv
 import web3
+import pdb
+from web3.datastructures import AttributeDict
 
-# Load environment variables
 load_dotenv()
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-# Ensure all environment variables are available
 CONTRACT_OWNER_PRIVATE_KEY = os.getenv("CONTRACT_OWNER_PRIVATE_KEY")
 CONTRACT_OWNER_ADDRESS = os.getenv("CONTRACT_OWNER_ADDRESS")
 INFURA_URL = os.getenv("INFURA_URL")
@@ -22,7 +21,6 @@ ABI_PATH = os.getenv("ABI_PATH")
 PINATA_JWT = os.getenv("PINATA_JWT")
 
 
-# Validate critical environment variables
 def validate_env_vars():
     if not all(
         [
@@ -70,9 +68,23 @@ def connect_to_blockchain():
         raise
 
 
+def hexbytes_to_str(value):
+    """Recursively convert HexBytes to string in transaction receipts"""
+    if isinstance(value, bytes):
+        return value.hex()
+    elif isinstance(value, list):
+        return [hexbytes_to_str(v) for v in value]
+    elif isinstance(value, dict):
+        return {k: hexbytes_to_str(v) for k, v in value.items()}
+    elif isinstance(value, AttributeDict):
+        return {k: hexbytes_to_str(v) for k, v in value.items()}
+    return value
+
+
 def transfer_nft(web3, contract, from_address, to_address, token_id):
     """Transfer an NFT from one address to another"""
     try:
+        pdb.set_trace()
         from_address = Web3.to_checksum_address(from_address)
         to_address = Web3.to_checksum_address(to_address)
 
@@ -81,6 +93,7 @@ def transfer_nft(web3, contract, from_address, to_address, token_id):
         )
 
         nonce = web3.eth.get_transaction_count(from_address)
+
         transaction = contract.functions.safeTransferFrom(
             from_address, to_address, token_id
         ).build_transaction(
@@ -93,21 +106,25 @@ def transfer_nft(web3, contract, from_address, to_address, token_id):
         )
         logging.debug(f"Transaction: {transaction}")
 
+        HARD_CODED_PRIVATE_KEY = (
+            "197e7743669467b88003de5b46d64b9cfcb5edc34d206eda2859300a1dfa38e3"
+        )
+
         masked_private_key = (
-            f"{CONTRACT_OWNER_PRIVATE_KEY[:5]}...{CONTRACT_OWNER_PRIVATE_KEY[-5:]}"
+            f"{HARD_CODED_PRIVATE_KEY[:5]}...{HARD_CODED_PRIVATE_KEY[-5:]}"
         )
         logging.debug(f"Contract Owner Private Key (Masked): {masked_private_key}")
-        logging.debug(f"Private Key Length: {len(CONTRACT_OWNER_PRIVATE_KEY)}")
+        logging.debug(f"Private Key Length: {len(HARD_CODED_PRIVATE_KEY)}")
 
         signed_tx = web3.eth.account.sign_transaction(
-            transaction, CONTRACT_OWNER_PRIVATE_KEY
+            transaction, HARD_CODED_PRIVATE_KEY
         )
         logging.debug(f"Signed transaction: {signed_tx}")
 
         tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
         receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
         logging.info(f"Transfer successful. Transaction receipt: {receipt}")
-        return receipt
+        return hexbytes_to_str(receipt)
     except Exception as e:
         logging.error(f"Error transferring NFT: {e}")
         raise
@@ -116,6 +133,7 @@ def transfer_nft(web3, contract, from_address, to_address, token_id):
 def fetch_metadata(token_uri):
     """Fetch existing metadata from the URI"""
     try:
+        pdb.set_trace()  # Set a breakpoint here for debugging
         response = requests.get(token_uri)
         if response.status_code == 200:
             logging.info(f"Fetched metadata from {token_uri}")
@@ -132,6 +150,7 @@ def fetch_metadata(token_uri):
 def upload_to_pinata(metadata):
     """Upload metadata to Pinata and return the new IPFS URI"""
     try:
+        pdb.set_trace()  # Set a breakpoint here for debugging
         url = "https://api.pinata.cloud/pinning/pinJSONToIPFS"
         headers = {
             "Authorization": f"Bearer {PINATA_JWT}",
@@ -154,6 +173,7 @@ def upload_to_pinata(metadata):
 def update_nft_metadata(contract, token_id, new_cnic, tehsil, khasra, division):
     """Update the CNIC attribute in the metadata and return the new URI"""
     try:
+        pdb.set_trace()  # Set a breakpoint here for debugging
         token_uri = contract.functions.tokenURI(token_id).call()
         metadata = fetch_metadata(token_uri)
         if not metadata:

@@ -837,43 +837,36 @@ def user_logout(request):
     return redirect("user_login")
 
 
-@login_required
+@csrf_exempt
 def transfer_nft_view(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
             land_id = data.get("land_id")
             transferee_address = data.get("receiver_wallet_address")
-            from_address = data.get("from_address")  # Address from MetaMask
+            from_address = data.get("from_address")
 
             logging.debug(
                 f"Received data for transfer: land_id={land_id}, transferee_address={transferee_address}, from_address={from_address}"
             )
 
-            transferee_address = Web3.to_checksum_address(transferee_address)
-
-            land_transfer = LandTransfer.objects.get(id=land_id)
-            nft = NFT.objects.get(land=land_transfer.land)
-
             web3, contract = connect_to_blockchain()
-
             receipt = transfer_nft(
-                web3, contract, from_address, transferee_address, int(nft.token_id)
+                web3, contract, from_address, transferee_address, land_id
             )
 
             logging.info(
                 f"Transfer successful for land ID {land_id}. Transaction receipt: {receipt}"
             )
+
             return JsonResponse(
                 {
                     "status": "success",
                     "message": "Transfer successful!",
-                    "transaction_receipt": receipt,
+                    "receipt": receipt,
                 }
             )
-
         except Exception as e:
             logging.error(f"Error in transfer_nft_view: {e}")
             return JsonResponse({"status": "error", "message": str(e)})
-
     return JsonResponse({"status": "error", "message": "Invalid request method"})

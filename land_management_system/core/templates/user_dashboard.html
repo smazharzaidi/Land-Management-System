@@ -4,7 +4,7 @@
   <head>
     <title>User Dashboard</title>
     <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}" />
-    <script src="https://cdn.jsdelivr.net/npm/@metamask/detect-provider@1.2.0/dist/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@metamask/detect-provider/dist/index.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.3.0/web3.min.js"></script>
   </head>
   <body>
@@ -34,7 +34,7 @@
                 <td>{{ land.land.khasra_number }}</td>
                 <td>{{ land.land.division }}</td>
                 <td>
-                  <button onclick="transferLand({{ land.id }}, '{{ land.transferee_user.wallet_address }}', '{{ land.land.khasra_number }}', '{{ land.land.tehsil }}', '{{ land.land.division }}')">Transfer</button>
+                  <button onclick="transferLand({{ land.id }}, '{{ land.transferee_user.wallet_address }}')">Transfer</button>
                 </td>
               </tr>
             {% endfor %}
@@ -44,15 +44,32 @@
         <p>No lands available where taxes are fully paid.</p>
       {% endif %}
     </div>
+
     <script>
+      // Ensure that MetaMask is installed
+      detectEthereumProvider()
+        .then((provider) => {
+          if (provider) {
+            console.log('Ethereum successfully detected!')
+            // You can now initialize your application
+          } else {
+            console.error('Please install MetaMask!')
+          }
+        })
+        .catch((error) => {
+          console.error('An error occurred:', error)
+        })
+      
       async function connectWallet() {
-        if (typeof window.ethereum !== 'undefined') {
+        const provider = await detectEthereumProvider()
+        if (provider) {
           try {
-            await window.ethereum.request({ method: 'eth_requestAccounts' })
-            return new Web3(window.ethereum)
+            await provider.request({ method: 'eth_requestAccounts' })
+            return new Web3(provider)
           } catch (error) {
             console.error('Failed to connect wallet:', error)
             alert('Failed to connect wallet. Check the console for more details.')
+            return null
           }
         } else {
           alert('MetaMask is not installed. Please install MetaMask to interact.')
@@ -89,12 +106,14 @@
           })
         })
       
-        const result = await response.json()
-        console.log(`Transfer result: ${JSON.stringify(result)}`)
-        if (result.status === 'success') {
-          alert('Transfer successful!')
-        } else {
-          alert(`Error during transfer: ${result.message}`)
+        if (response !== null && response !== undefined) {
+          const result = await response.json()
+          console.log(`Transfer result: ${JSON.stringify(result)}`)
+          if (result.status === 'success') {
+            alert('Transfer successful!')
+          } else {
+            alert(`Error during transfer: ${result.message}`)
+          }
         }
       }
       
@@ -107,6 +126,7 @@
       })
       
       window.ethereum.on('chainChanged', (_chainId) => window.location.reload())
+      
       console.log('Contract Address:', document.getElementById('debugContractAddress').innerText)
       console.log('ABI:', JSON.parse(document.getElementById('debugABI').innerText))
     </script>
