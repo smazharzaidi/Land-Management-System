@@ -98,7 +98,7 @@ def transfer_nft(web3, contract, from_address, to_address, token_id):
             from_address, to_address, token_id
         ).build_transaction(
             {
-                "chainId": 11155111,  # Sepolia Testnet Chain ID
+                "chainId": 11155111,
                 "gas": 200000,
                 "gasPrice": web3.to_wei("10", "gwei"),
                 "nonce": nonce,
@@ -180,12 +180,10 @@ def update_nft_metadata(contract, token_id, new_cnic, tehsil, khasra, division):
             logging.error("Unable to fetch existing metadata")
             raise Exception("Unable to fetch existing metadata")
 
-        # Update the CNIC field
         for attribute in metadata["attributes"]:
             if attribute["trait_type"] == "CNIC":
                 attribute["value"] = new_cnic
 
-        # Update Tehsil, Khasra, and Division attributes
         for attribute in metadata["attributes"]:
             if attribute["trait_type"] == "Tehsil":
                 attribute["value"] = tehsil

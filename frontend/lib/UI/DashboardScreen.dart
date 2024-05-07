@@ -116,7 +116,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.all(16.0),
-                        child: Text('Welcome to your dashboard!',
+                        child: Text('Welcome to the Dashboard!',
                             style: GoogleFonts.lato(
                                 fontSize: 22, fontWeight: FontWeight.bold)),
                       ),
@@ -129,7 +129,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                                 foregroundColor: Colors.white,
-                                backgroundColor: Colors.black,
+                                backgroundColor: Colors.green,
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(30.0)),
                                 padding: EdgeInsets.symmetric(vertical: 15.0)),
@@ -400,7 +400,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           foregroundColor: Colors.white,
-                          backgroundColor: Colors.black,
+                          backgroundColor: Colors.green,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30.0)),
                           padding: EdgeInsets.symmetric(vertical: 15.0),
@@ -410,7 +410,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           'Link Permanently',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 16,
+                            fontSize: 15,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -424,6 +424,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           actions: <Widget>[
             TextButton(
               child: const Text('Close'),
+              
               onPressed: () {
                 Navigator.of(context).pop();
               },
