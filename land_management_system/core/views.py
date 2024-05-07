@@ -26,7 +26,7 @@ from django.contrib.auth.decorators import login_required
 from rest_framework_simplejwt.authentication import JWTAuthentication
 import logging
 from django.utils import timezone
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import Q, Exists, OuterRef, Case, Value, When, CharField, F
 from django.core.mail import send_mail
 from django.conf import settings
 from allauth.account.forms import ResetPasswordForm
@@ -628,7 +628,7 @@ def store_data(request):
 
 @login_required
 def view_status(request):
-    # Fetch all land transfers with both parties having paid their taxes
+    # Fetch all land transfers with their tax statuses
     land_transfers = LandTransfer.objects.annotate(
         transferor_paid=Exists(
             TaxesFee.objects.filter(
@@ -640,10 +640,24 @@ def view_status(request):
                 transfer_id=OuterRef("pk"), tax_type="transferee", status="paid"
             )
         ),
-    ).filter(transferor_paid=True, transferee_paid=True)
+    )
 
     context = {"land_transfers": land_transfers}
     return render(request, "teh_status.html", context)
+
+    context = {"land_transfers": land_transfers}
+    return render(request, "teh_status.html", context)
+
+
+@login_required
+def approve_transfer(request, transfer_id):
+    if request.method == "POST":
+        TaxesFee.objects.filter(transfer_id=transfer_id).update(
+            status="paid", payment_date=datetime.date.today()
+        )
+
+        # Redirect to the status page or anywhere else after approval
+        return redirect("teh_status")
 
 
 @csrf_exempt
@@ -859,14 +873,15 @@ def transfer_nft_view(request):
                 f"Transfer successful for land ID {land_id}. Transaction receipt: {receipt}"
             )
 
-            return JsonResponse(
-                {
-                    "status": "success",
-                    "message": "Transfer successful!",
-                    "receipt": receipt,
-                }
-            )
+            if receipt:
+                logging.info(f"Transfer successful for land ID {land_id}. Transaction receipt: {receipt}")
+                update_land_owner(land_id)
+                return JsonResponse({'status': 'success', 'message': 'Transfer successful', 'transaction_receipt': str(receipt)})
+            else:
+                return JsonResponse({'status': 'error', 'message': 'Transfer failed'})
+
         except Exception as e:
             logging.error(f"Error in transfer_nft_view: {e}")
-            return JsonResponse({"status": "error", "message": str(e)})
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+            return JsonResponse({'status': 'error', 'message': str(e)})
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})

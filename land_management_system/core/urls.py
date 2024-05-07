@@ -53,4 +53,8 @@ urlpatterns = [
     path("user_dashboard/", user_dashboard, name="user_dashboard"),
     path("user_logout/", user_logout, name="user_logout"),
     path("transfer_nft/", transfer_nft_view, name="transfer_nft"),
+    # urls.py
+    path(
+        "approve-transfer/<int:transfer_id>/", approve_transfer, name="approve_transfer"
+    ),
 ]

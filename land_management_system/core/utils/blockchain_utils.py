@@ -8,6 +8,8 @@ import web3
 import pdb
 from web3.datastructures import AttributeDict
 
+from core.models import LandTransfer
+
 load_dotenv()
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -84,7 +86,6 @@ def hexbytes_to_str(value):
 def transfer_nft(web3, contract, from_address, to_address, token_id):
     """Transfer an NFT from one address to another"""
     try:
-        pdb.set_trace()
         from_address = Web3.to_checksum_address(from_address)
         to_address = Web3.to_checksum_address(to_address)
 
@@ -127,6 +128,28 @@ def transfer_nft(web3, contract, from_address, to_address, token_id):
         return hexbytes_to_str(receipt)
     except Exception as e:
         logging.error(f"Error transferring NFT: {e}")
+        raise
+
+
+def update_land_owner(land_transfer_id):
+    """Update the owner in the Land table and remove the LandTransfer entry"""
+    try:
+        land_transfer = LandTransfer.objects.get(id=land_transfer_id)
+        land = land_transfer.land
+        new_owner = land_transfer.transferee_user
+
+        # Update land owner
+        land.owner = new_owner
+        land.save()
+
+        # Remove the corresponding LandTransfer entry
+        land_transfer.delete()
+
+        logging.info(
+            f"Land owner updated and transfer entry removed for land ID {land.id}"
+        )
+    except Exception as e:
+        logging.error(f"Error updating land owner: {e}")
         raise
 
 

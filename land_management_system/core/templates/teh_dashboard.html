@@ -37,6 +37,402 @@
     <link rel="stylesheet" href="{% static 'website/css/admin_styles.css' %}">
     <link rel="stylesheet" href="{% static 'website/css/datatables.css' %}">
 </head>
+<style>
+    :root {
+        --main-bg-color: #25293c;
+        --white-color: #ffffff;
+        --blue-color: #fff;
+        --orange-color: #02c723;
+        --black-color: #000;
+    }
+
+    .primary-text {
+        color: var(--white-color);
+    }
+
+    .bg-blue {
+        background: var(--orange-color);
+    }
+
+    .text-orange {
+        color: var(--orange-color);
+    }
+
+    .bg-blue-color {
+        background-color: var(--blue-color);
+    }
+
+    .primary-bg {
+        background-color: var(--blue-color) !important;
+    }
+
+    .secondary-bg {
+        background-color: var(--second-bg-color);
+    }
+
+    .bg_orange {
+        background-color: var(--orange-color);
+    }
+
+    .badge_orange_bg {
+        background-color: #ffffff;
+    }
+
+    .rounded-full {
+        border-radius: 100%;
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        color: rgba(0, 0, 0, 0);
+        opacity: 1;
+        display: block;
+        background: url(../images/calendar.png) no-repeat;
+        width: 20px;
+        height: 20px;
+        border-width: thin;
+    }
+
+    #wrapper {
+        overflow-x: hidden;
+        background-color: #fff !important;
+    }
+
+    #sidebar-wrapper {
+        min-height: 100vh;
+        margin-left: -15rem;
+        -webkit-transition: margin 0.25s ease-out;
+        -moz-transition: margin 0.25s ease-out;
+        -o-transition: margin 0.25s ease-out;
+        transition: margin 0.25s ease-out;
+    }
+
+    #sidebar-wrapper .sidebar-heading {
+        padding: 1rem 0rem;
+        font-size: 1.2rem;
+    }
+
+    #sidebar-wrapper .sidebar_list {
+        width: 15rem;
+    }
+
+    #page-content-wrapper {
+        min-width: 100vw;
+    }
+
+    #wrapper.toggled #sidebar-wrapper {
+        margin-left: 0;
+    }
+
+    #menu-toggle {
+        cursor: pointer;
+    }
+
+    .sidebar_list .nav-item {
+        border: none;
+        padding: 15px 10px;
+    }
+
+    .sidebar_list .nav-item .nav-link {
+        color: #000 !important;
+        font-size: 1rem;
+        position: relative;
+    }
+
+    .sidebar_list .nav-item .nav-link.active {
+        background-color: var(--orange-color) !important;
+        border: none;
+        color: #ffffff !important;
+        border-radius: 0.2rem;
+    }
+
+
+    @media (min-width: 1200px) {
+        #sidebar-wrapper {
+            margin-left: 0;
+        }
+
+        #page-content-wrapper {
+            min-width: 0;
+            width: 100%;
+        }
+
+        #wrapper.toggled #sidebar-wrapper {
+            margin-left: -15rem;
+        }
+    }
+
+    .custom_nav {
+        padding: 1.27rem 0.5rem;
+    }
+
+    .custom_nav .nav-link img {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+    }
+
+    .custom_nav .nav-link span {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.9rem;
+        font-weight: 600 !important;
+        color: #ffffff;
+        letter-spacing: 0.5px;
+    }
+
+    .custom_nav_list .dropdown .dropdown-menu .dropdown-item a {
+        font-family: 'Inter', sans-serif;
+        color: #000000;
+    }
+
+
+    .active>.page-link,
+    .page-link.active {
+        background-color: var(--blue-color) !important;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    .active>.page-link,
+    .page-link {
+        background-color: var(--orange-color);
+        color: #fff;
+        margin: 0 2px !important;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    ::-webkit-scrollbar-track {
+        -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+        background-color: #02b0c0;
+    }
+
+    .fs-12 {
+        font-size: 12px;
+    }
+
+    .fs-14 {
+        font-size: 14px;
+    }
+
+    ::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+        background-color: #F5F5F5;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background-color: gray;
+    }
+
+
+
+
+    .page-item .page-link {
+        border-radius: 50%;
+        width: 30px;
+        display: flex;
+        justify-content: center;
+        height: 30px;
+        background-color: var(--orange-color);
+        border: none;
+    }
+
+
+    .h-overflow {
+        height: 500px;
+        overflow-x: hidden;
+        overflow-y: scroll;
+    }
+
+    .arrowupsdown.active,
+    .arrowupsdown-1.active {
+        transform: rotate(180deg);
+    }
+
+    .customdrop::after {
+        border: none !important;
+        margin: 0px !important;
+    }
+
+    .arrow-circle {
+        height: 40px;
+        width: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .arrow-circle:hover {
+        background-color: var(--orange-color);
+        color: #fff;
+    }
+
+    .arrowdown::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0px;
+        width: 100%;
+        height: 1px;
+        background-color: #3A3E52;
+    }
+
+    .arrowdown span {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: block;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 10px;
+    }
+
+
+    .cust-2 .nav-item .nav-link {
+        width: 110px !important;
+        height: 110px !important;
+    }
+
+    .iconcircle {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px dashed var(--orange-color);
+        padding: 15px;
+        margin: 0 auto;
+    }
+
+    .btncust {
+        width: 130px;
+        white-space: nowrap;
+        border-radius: 5px;
+    }
+
+    .ms-selectall {
+        text-transform: capitalize !important;
+    }
+
+
+    input[type='datetime-local']::-webkit-calendar-picker-indicator {
+        color: rgba(0, 0, 0, 0);
+        opacity: 1;
+        display: block;
+        background: url(../images/calendar.png) no-repeat;
+        width: 25px;
+        height: 25px;
+        border-width: thin
+    }
+
+    .size {
+        width: 20px;
+    }
+
+    .circle-upload {
+        width: 130px;
+        height: 130px;
+        border-radius: 50%;
+        border: 3px dashed var(--orange-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 14px;
+    }
+
+    /*customized modal open from right side css (end)*/
+
+
+    .btn-main {
+        background: var(--orange-color);
+        color: #fff;
+
+    }
+
+    .btn-main:hover,
+    .btn-main:focus,
+    .btn-main:active {
+        background: transparent !important;
+        color: var(--orange-color) !important;
+        border: 1px solid var(--orange-color) !important;
+    }
+
+    div.dataTables_wrapper div.dataTables_filter input {
+        margin-left: 0.5em;
+        display: inline-block;
+        width: auto;
+        border: 1px solid var(--orange-color);
+    }
+
+    .bg-orange {
+        background-color: #f89321 !important;
+    }
+
+    .btnCust-1 {
+        position: relative;
+        font-size: 14px;
+        line-height: 24px;
+        padding: 15px 40px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        overflow: hidden;
+        color: #ffffff;
+        border-radius: 50px;
+        z-index: 1;
+        background: var(--blue-color);
+        -webkit-transition: all 500ms ease;
+        transition: all 500ms ease;
+        display: inline-block;
+        white-space: nowrap;
+        /*    min-width: 200px !important;*/
+        border: 1px solid var(--blue-color);
+    }
+
+    .btnCust-1:before {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        content: "";
+        background-color: var(--orange-color) !important;
+        -webkit-clip-path: polygon(50% 0, 50% 0, 50% 50%, 50% 100%, 50% 100%, 50% 50%);
+        clip-path: polygon(50% 0, 50% 0, 50% 50%, 50% 100%, 50% 100%, 50% 50%);
+        -webkit-transition: all 500ms ease;
+        transition: all 500ms ease;
+        z-index: -1;
+    }
+
+    .btnCust-1:hover {
+        color: #fff;
+    }
+
+    .btnCust-1:hover:before {
+        -webkit-clip-path: polygon(25% -70%, 75% -70%, 120% 50%, 75% 170%, 25% 170%, -20% 50%);
+        clip-path: polygon(25% -70%, 75% -70%, 120% 50%, 75% 170%, 25% 170%, -20% 50%);
+    }
+
+    .bg-blue-color {
+        background-color: var(--blue-color);
+    }
+
+    .active>.page-link,
+    .page-link.active {
+        background-color: var(--blue-color) !important;
+        color: #02b0c0 !important;
+        border: 1px solid #02b0c0 !important;
+    }
+</style>
 
 
 <body>
@@ -193,7 +589,7 @@
                     <div class="col-12">
                         <div class="card border-0">
                             <div class="card-body px-0">
-                                <h4 class="text-orange mb-3">All Transfers</h4>
+                                <h4 class="text-orange mb-3">All of TasilDar</h4>
                                 <div class="row g-3">
                                     <div class="col-lg-12">
                                         <div class="card">
@@ -202,47 +598,47 @@
                                                     <table class="table table-bordered" id="table">
                                                         <thead class="bg_orange text-light fw-semibold">
                                                             <th>
-                                                                <span>ID</span>
+                                                                <span>
+                                                                    ID
+                                                                </span>
                                                             </th>
                                                             <th>
-                                                                <span>Tehsil</span>
+                                                                <span>
+                                                                    Transferor User
+                                                                </span>
                                                             </th>
                                                             <th>
-                                                                <span>Khasra Number</span>
+                                                                <span>
+                                                                    Transferee User
+                                                                </span>
                                                             </th>
                                                             <th>
-                                                                <span>Division</span>
+                                                                <span>
+                                                                    Transfer Type
+                                                                </span>
                                                             </th>
                                                             <th>
-                                                                <span>Transferor User</span>
-                                                            </th>
-                                                            <th>
-                                                                <span>Transferee User</span>
-                                                            </th>
-                                                            <th>
-                                                                <span>Transfer Type</span>
-                                                            </th>
-                                                            <th>
-                                                                <span>Status</span>
+                                                                <span>
+                                                                    Status
+                                                                </span>
                                                             </th>
                                                             <th class="text-center ">
-                                                                <span>Action</span>
+                                                                <span>
+                                                                    Action
+                                                                </span>
                                                             </th>
                                                         </thead>
                                                         <tbody>
                                                             {% for transfer in land_data %}
                                                             <tr>
                                                                 <td>{{ transfer.id }}</td>
-                                                                <td>{{ transfer.land.tehsil }}</td>
-                                                                <td>{{ transfer.land.khasra_number }}</td>
-                                                                <td>{{ transfer.land.division }}</td>
                                                                 <td>{{ transfer.transferor_user }}</td>
                                                                 <td>{{ transfer.transferee_user }}</td>
                                                                 <td>{{ transfer.transfer_type }}</td>
                                                                 <td>{{ transfer.status }}</td>
                                                                 <td>
                                                                     <div
-                                                                        class="d-flex justify-content-center align-items-center g-3">
+                                                                        class="d-flex justify-content-center  align-items-center  g-3">
                                                                         <div class="mx-1">
                                                                             <a href="{% url 'teh_approved' transfer.id %}"
                                                                                 class="btn btn-main">
@@ -279,6 +675,31 @@
                 </div>
             </div>
             <!-- /#page-content-wrapper -->
+        </div>
+
+
+
+        <!-- Modal -->
+        <div class="modal fade" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered text-center ">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-main text-center" id="viewModalLabel">Decline Request</h5>
+                    </div>
+                    <div class="modal-body">
+                        <div class="">
+                            <span class="fs-1 text-orange"><i class="fas fa-trash"></i></span>
+                            <p class="fs-4 text-orange">Are you Sure!</p>
+                        </div>
+                        <hr>
+                        <div class="d-flex align-items-center  justify-content-between ">
+                            <button type="button" class="btn btn-main px-5" data-bs-dismiss="modal">Sure</button>
+                            <button type="button" class="btn btn-outline-dark px-5 "
+                                data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
