@@ -125,7 +125,7 @@ class _BottomNavBarScreenDashboardState
           fontSize: 14,
           fontWeight: FontWeight.bold,
         ),
-        selectedItemColor: Colors.blue,
+        selectedItemColor: Colors.green,
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
       ),

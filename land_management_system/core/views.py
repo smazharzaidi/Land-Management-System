@@ -599,7 +599,7 @@ def store_data(request):
                         if filer_status == "filer"
                         else amount * Decimal("0.09")
                     )
-            return Decimal("0")  # No tax for gifts
+            return Decimal("0") 
 
         tax_amount_transferor = calculate_tax(
             "transferor", transfer.transferor_user.filer_status, amount

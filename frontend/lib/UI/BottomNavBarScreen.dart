@@ -39,6 +39,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             fontSize: 28,
             fontWeight: FontWeight.bold,
             color: Colors.black,
+            
           ),
         ),
         backgroundColor: Colors.grey[200],
@@ -73,10 +74,11 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue,
+        selectedItemColor: Colors.green,
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
         showUnselectedLabels: true,
+        backgroundColor: Colors.white,
       ),
     );
   }

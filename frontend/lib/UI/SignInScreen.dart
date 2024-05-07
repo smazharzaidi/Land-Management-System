@@ -77,6 +77,7 @@ class _SignInScreenState extends State<SignInScreen> {
         actions: <Widget>[
           TextButton(
             child: Text('Resend'),
+            
             onPressed: () async {
               Navigator.of(ctx).pop(); // Close the dialog
               String message =
@@ -106,7 +107,7 @@ class _SignInScreenState extends State<SignInScreen> {
               left: 20,
               right: 20,
               child: Text(
-                'Sign In',
+                '',
                 style: GoogleFonts.lato(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -131,7 +132,8 @@ class _SignInScreenState extends State<SignInScreen> {
                     ),
                     OutlinedButton(
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.black),
+                        backgroundColor: Colors.grey[200],
+                        side: BorderSide(color: Colors.green),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
@@ -143,10 +145,12 @@ class _SignInScreenState extends State<SignInScreen> {
                           isEmail = !isEmail;
                         });
                       },
+                      
                       child: Text(
                         isEmail ? 'Switch to CNIC' : 'Switch to Email',
                         style: GoogleFonts.lato(
-                          color: Colors.black,
+                          color: Colors.green,
+                          
                           fontSize: 16,
                         ),
                       ),
@@ -163,7 +167,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           foregroundColor: Colors.white,
-                          backgroundColor: Colors.black,
+                          backgroundColor: Colors.green,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30.0),
                           ),
@@ -178,11 +182,12 @@ class _SignInScreenState extends State<SignInScreen> {
                             : Text(
                                 'Sign In',
                                 style: GoogleFonts.lato(
-                                  color: Colors.white,
+                                  //color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
+                              
                       ),
                     ),
                     TextButton(

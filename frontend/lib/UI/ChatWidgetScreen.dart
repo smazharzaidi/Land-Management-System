@@ -60,7 +60,7 @@ class _ChatWidgetScreenState extends State<ChatWidgetScreen> {
     final bool isUser = message["sender"] == "user";
     final Alignment alignment =
         isUser ? Alignment.centerRight : Alignment.centerLeft;
-    final Color bubbleColor = isUser ? Colors.blue[100]! : Colors.grey[300]!;
+    final Color bubbleColor = isUser ? Color.fromARGB(255, 162, 235, 126)! : Colors.grey[300]!;
     final Color textColor = isUser ? Colors.blue[900]! : Colors.black;
     final BorderRadius borderRadius = isUser
         ? BorderRadius.only(
@@ -119,7 +119,9 @@ class _ChatWidgetScreenState extends State<ChatWidgetScreen> {
                     child: TextField(
                       controller: _controller,
                       decoration: InputDecoration(
+                        
                         hintText: "Send a message...",
+                      
                         filled: true,
                         fillColor: Colors.white,
                         contentPadding: const EdgeInsets.symmetric(
@@ -128,6 +130,7 @@ class _ChatWidgetScreenState extends State<ChatWidgetScreen> {
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(25),
+                          
                           borderSide: BorderSide.none,
                         ),
                       ),
@@ -140,7 +143,7 @@ class _ChatWidgetScreenState extends State<ChatWidgetScreen> {
                   const SizedBox(width: 10),
                   CircleAvatar(
                     radius: 20,
-                    backgroundColor: Colors.black,
+                    backgroundColor: Colors.green,
                     child: IconButton(
                       key: ValueKey<bool>(_isSending),
                       icon: _isSending
